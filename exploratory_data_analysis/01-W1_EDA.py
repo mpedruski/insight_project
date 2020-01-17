@@ -12,14 +12,14 @@ df = pd.read_csv(file_to_open,usecols=[3,4,5], nrows = 1000)
 df['Statut-document']=df['Statut-document'].astype('category')
 
 ### Categories of statut that constitute a used document
-Used = ['Consultation sur place','En traitment','En transit','Facturé','Prêt retrait','Prêté','Recherché']
+used = {'Consultation sur place','En traitment','En transit','Facturé','Prêt retrait','Prêté','Recherché'}
 
 ### Create numeric vector from 'Statut-document'
 numeric_statut = []
-for Statut in df['Statut-document']:
-    if Statut == "Disponible":
+for statut in df['Statut-document']:
+    if statut == "Disponible":
         numeric_statut.append(0)
-    elif Statut in Used:
+    elif statut in used:
         numeric_statut.append(1)
     else:
         numeric_statut.append(2)
