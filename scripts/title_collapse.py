@@ -25,6 +25,32 @@ def aquire_trait(isn,trait):
         accept_aspect = "NONE"
     return accept_aspect
 
+def determine_exclude(file, nrows):
+    df = pd.read_csv(file,usecols=[6],nrows=nrows)
+    ### Isolate categories of document that refer to books
+    df['Type-document']=df['Type-document'].astype('category')
+    cats = df['Type-document'].unique()
+    book_cats = {cat for cat in cats if "LV" in cat}
+
+    ### Which rows of the dataset don't refer to books
+    exclude = []
+    for i in range(len(df['Type-document'])):
+        if df['Type-document'][i] not in book_cats:
+            exclude.append(i+1)
+    return exclude
+
+def numericize_availability(isbns):
+    ### Convert ISN = disponible to 1, otherwise leave as 0
+    avails = []
+    df_isn = df1['Statut-document']
+    for i in range(len(df_isn)):
+        if df_isn[i] == 'Disponible':
+            avails.append(1)
+        else:
+            avails.append(0)
+    return avails
+
+
 print(datetime.datetime.now())
 
 ### Determine paths to datasets
@@ -39,28 +65,7 @@ test_file = test_folder / 'biblioMTL_small_test.csv'
 nrows = 19200
 
 ### Determine which rows of dataset refer to books
-
-
-df = pd.read_csv(test_file,usecols=[6],nrows=nrows)
-### Isolate categories of document that refer to books
-df['Type-document']=df['Type-document'].astype('category')
-cats = df['Type-document'].unique()
-book_cats = {cat for cat in cats if "LV" in cat}
-
-### Which rows of the dataset don't refer to books
-exclude = []
-for i in range(len(df['Type-document'])):
-    if df['Type-document'][i] not in book_cats:
-        exclude.append(i+1)
-
-### Some titles that come up as PO_Québec seem like books. Also one
-### nouveaute appears to be a book, but many are not.
-poq = []
-for i in range(len(df['Type-document'])):
-    if df['Type-document'][i] == "PO_Québec":
-        poq.append(i)
-### PO_Q is rare enough that it can be safely ignored. Only 9 titles from
-### first 10000
+exclude = determine_exclude(test_file,nrows)
 
 
 ### Collate variables of interest on a per-title basis
@@ -70,16 +75,8 @@ df1 = pd.read_csv(test_file, header=0, usecols=[5,6,8,10,12,13,14,15,16,17,19],
     skiprows=exclude,nrows=nrows)
 ### Find list of unique ISNs in collection
 isns = df1['ISN'].unique()
-
-### Convert ISN = disponible to 1, otherwise leave as 0
-avails = []
-df_isn = df1['Statut-document']
-for i in range(len(df_isn)):
-    if df_isn[i] == 'Disponible':
-        avails.append(1)
-    else:
-        avails.append(0)
-df1['Statut-document'] = avails
+### Convert availability to numeric values
+df1['Statut-document'] = numericize_availability(isns)
 
 ### Creating lists for variables to combine into a reduced dataframe
 available_count = [available_copies(i) for i in isns]
