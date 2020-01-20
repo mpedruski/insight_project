@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import datetime
 
 def available_copies(isn):
     documents = df1.loc[df1['ISN'] == isn]
@@ -24,17 +25,23 @@ def aquire_trait(isn,trait):
         accept_aspect = "NONE"
     return accept_aspect
 
-### Determine to datasets and load raw data into dataframe df
+print(datetime.datetime.now())
+
+### Determine paths to datasets
 data_folder = Path("../data/raw")
 test_folder = Path("../data/test")
 
 file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
 file_to_write = test_folder / 'by_titles.csv'
-test_file = test_folder / 'biblioMTL_test.csv'
-df = pd.read_csv(file_to_open,usecols=[0,6,10,12],nrows=301)
+test_file = test_folder / 'biblioMTL_small_test.csv'
+# test_file = test_folder / 'biblioMTL_big_test.csv'
+
+nrows = 19200
 
 ### Determine which rows of dataset refer to books
 
+
+df = pd.read_csv(test_file,usecols=[6],nrows=nrows)
 ### Isolate categories of document that refer to books
 df['Type-document']=df['Type-document'].astype('category')
 cats = df['Type-document'].unique()
@@ -56,14 +63,13 @@ for i in range(len(df['Type-document'])):
 ### first 10000
 
 
-### Load all books into dataframe df1
-df1 = pd.read_csv(test_file, header=0, usecols=[5,6,8,10,12,13,14,15,16,17,19],
-    skiprows=exclude)
+### Collate variables of interest on a per-title basis
 
+
+df1 = pd.read_csv(test_file, header=0, usecols=[5,6,8,10,12,13,14,15,16,17,19],
+    skiprows=exclude,nrows=nrows)
 ### Find list of unique ISNs in collection
 isns = df1['ISN'].unique()
-
-### For each ISN determine how many copies are available
 
 ### Convert ISN = disponible to 1, otherwise leave as 0
 avails = []
@@ -74,22 +80,25 @@ for i in range(len(df_isn)):
     else:
         avails.append(0)
 df1['Statut-document'] = avails
-### Creating lists to combine into a reduced dataframe
+
+### Creating lists for variables to combine into a reduced dataframe
 available_count = [available_copies(i) for i in isns]
 total_count = [total_copies(i) for i in isns]
 demand_count = []
 for i in range(len(available_count)):
     demand_count.append(total_count[i]-available_count[i])
-columns_to_build = ['Titre','Auteur','Editeur','Lieu','Pays','Annee','Nombre-pages','Langue']
-results = [[],[],[],[],[],[],[],[]]
+columns_to_build = ['Titre','Auteur','Editeur','Lieu','Pays','Annee','Nombre-pages','Langue','Type-document']
+results = [[],[],[],[],[],[],[],[],[]]
 for i in range(len(columns_to_build)):
     results[i] = [aquire_trait(j,columns_to_build[i]) for j in isns]
 
 ### Build and join datasets based on list results, export to csv
 
+
 df3 = pd.DataFrame(results)
 df3 = df3.transpose()
 df3.columns = columns_to_build
-df4 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count})
+df4 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'ISBN':isns})
 df5 = df3.join(df4)
 df5.to_csv(file_to_write)
+print(datetime.datetime.now())
