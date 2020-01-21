@@ -6,10 +6,10 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
-def available_copies(isn):
+def combine_numeric_data(isn, variable):
     documents = df1.loc[df1['ISN'] == isn]
-    available_count = sum(documents['Statut-document'])
-    return available_count
+    count = sum(documents[variable])
+    return count
 
 def total_copies(isn):
     documents = df1.loc[df1['ISN'] == isn]
@@ -84,7 +84,7 @@ nrows = 300
 exclude = determine_exclude(test_file,nrows)
 
 ### Clean and collate variables of interest on a per-title basis
-df1 = pd.read_csv(test_file, header=0, usecols=[5,6,8,10,12,13,14,15,16,17,19],
+df1 = pd.read_csv(test_file, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,19],
     skiprows=exclude,nrows=(nrows-len(exclude)))
 ### Find list of unique ISNs in collection
 isns = df1['ISN'].unique()
@@ -95,7 +95,8 @@ df1['Annee'] = text_remove_from_numeric_data(df1['Annee'])
 df1['Nombre-pages'] = text_remove_from_numeric_data(df1['Nombre-pages'])
 
 ### Creating lists for variables to combine into a reduced dataframe
-available_count = [available_copies(i) for i in isns]
+available_count = [combine_numeric_data(i,'Statut-document') for i in isns]
+lifetime_count = [combine_numeric_data(i,'Nombre-prets-vie') for i in isns]
 total_count = [total_copies(i) for i in isns]
 demand_count = []
 for i in range(len(available_count)):
@@ -113,7 +114,7 @@ isns = text_remove_from_numeric_data(isns)
 df3 = pd.DataFrame(results)
 df3 = df3.transpose()
 df3.columns = columns_to_build
-df4 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'ISBN':isns})
+df4 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'Lifetime':lifetime_count,'ISBN':isns})
 df5 = df3.join(df4)
 df5 = df5.dropna()
 df5.to_csv(file_to_write)
