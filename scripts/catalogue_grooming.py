@@ -1,6 +1,10 @@
 import pandas as pd
 from pathlib import Path
 import datetime
+import re
+import logging
+
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
 def available_copies(isn):
     documents = df1.loc[df1['ISN'] == isn]
@@ -22,7 +26,7 @@ def aquire_trait(isn,trait):
     if len(candidates)>0:
         accept_aspect = max(candidates,key=candidates.get)
     else:
-        accept_aspect = "NONE"
+        accept_aspect = None
     return accept_aspect
 
 def determine_exclude(file, nrows):
@@ -50,6 +54,18 @@ def numericize_availability(isbns):
             avails.append(0)
     return avails
 
+def text_remove_from_numeric_data(uncleaned_list):
+    logging.debug('Length of list pre formatting = {}'.format(len(uncleaned_list)))
+    cleaned_list = []
+    pattern = re.compile(r'[0-9]+')
+    for uncleaned_item in uncleaned_list:
+        pattern_output = pattern.search(str(uncleaned_item))
+        if pattern_output is None:
+            cleaned_list.append('nan')
+        else:
+            cleaned_list.append(pattern_output.group())
+    logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
+    return cleaned_list
 
 print(datetime.datetime.now())
 
@@ -67,16 +83,16 @@ nrows = 300
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(test_file,nrows)
 
-
-### Collate variables of interest on a per-title basis
-
-
+### Clean and collate variables of interest on a per-title basis
 df1 = pd.read_csv(test_file, header=0, usecols=[5,6,8,10,12,13,14,15,16,17,19],
     skiprows=exclude,nrows=(nrows-len(exclude)))
 ### Find list of unique ISNs in collection
 isns = df1['ISN'].unique()
-### Convert availability to numeric values
+### Convert availability of titles to numeric values
 df1['Statut-document'] = numericize_availability(isns)
+### Clean year and page data
+df1['Annee'] = text_remove_from_numeric_data(df1['Annee'])
+df1['Nombre-pages'] = text_remove_from_numeric_data(df1['Nombre-pages'])
 
 ### Creating lists for variables to combine into a reduced dataframe
 available_count = [available_copies(i) for i in isns]
@@ -89,6 +105,8 @@ results = [[],[],[],[],[],[],[],[],[]]
 for i in range(len(columns_to_build)):
     results[i] = [aquire_trait(j,columns_to_build[i]) for j in isns]
 
+### After all processing is complete, clean ISBN data
+isns = text_remove_from_numeric_data(isns)
 ### Build and join datasets based on list results, export to csv
 
 
@@ -97,5 +115,6 @@ df3 = df3.transpose()
 df3.columns = columns_to_build
 df4 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'ISBN':isns})
 df5 = df3.join(df4)
+df5 = df5.dropna()
 df5.to_csv(file_to_write)
 print(datetime.datetime.now())
