@@ -7,15 +7,8 @@ import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 from sklearn.datasets import make_blobs
 
-
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
-### Determine paths to datasets and load into pandas dataframe
-test_folder = Path("../data/processed")
-file_to_open = test_folder / 'by_titles.csv'
-file_to_write = test_folder / 'cluster_labels.csv'
-
-df = pd.read_csv(file_to_open)
 
 def variable_cluster(variable):
     '''Returns cluster labels each instance of a variable, based on the number
@@ -49,6 +42,15 @@ def reestablish_labels(variable,names,labels):
         label_column.append(int(labels[index]))
     return label_column
 
+### Determine paths to datasets and load into pandas dataframe
+test_folder = Path("../data/processed")
+file_to_open = test_folder / 'by_titles.csv'
+file_to_write = test_folder / 'cluster_labels.csv'
+
+df = pd.read_csv(file_to_open)
+logging.debug(df)
+### Process author, publisher, and country data
+
 author_count = variable_count('Auteur')
 publisher_count = variable_count('Editeur')
 country_count = variable_count('Pays')
@@ -64,6 +66,8 @@ country_labels = variable_cluster('Pays')
 title_author_labels = reestablish_labels('Auteur',author_names,author_labels)
 title_publisher_labels = reestablish_labels('Editeur',publisher_names,publisher_labels)
 title_country_labels = reestablish_labels('Editeur',country_names,country_labels)
+
+### Export final data set
 
 results = [title_author_labels,title_publisher_labels,title_country_labels]
 df1 = pd.DataFrame(results)
