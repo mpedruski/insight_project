@@ -12,8 +12,9 @@ logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(
 
 ### Determine paths to datasets and load into pandas dataframe
 test_folder = Path("../data/processed")
-
 file_to_open = test_folder / 'by_titles.csv'
+file_to_write = test_folder / 'cluster_labels.csv'
+
 df = pd.read_csv(file_to_open)
 
 def variable_cluster(variable):
@@ -39,17 +40,14 @@ def variable_count(variable):
     count = [len(np.where(x==item)[0]) for item in unique_levels]
     return count
 
-### Variables for which clustering is needed
-# need_clustering = ['Auteur','Editeur','Pays']
-# count_outputs = [[],[],[]]
-# names_outputs = [[],[],[]]
-
-# for i in range(len(need_clustering)):
-#     count_outputs[i] = variable_count(need_clustering[i])
-#     name_outputs[i] = df[need_clustering].unique()
-#
-# df1 = pd.DataFrame(results)
-# df1 = df1.transpose()
+def reestablish_labels(variable,names,labels):
+    '''Returns the labels that correspond to the individual titles after clustering
+    for unique values of the variable'''
+    label_column = []
+    for i in df[variable]:
+        index = np.where(names==i)[0]
+        label_column.append(int(labels[index]))
+    return label_column
 
 author_count = variable_count('Auteur')
 publisher_count = variable_count('Editeur')
@@ -57,8 +55,19 @@ country_count = variable_count('Pays')
 
 country_names = df['Pays'].unique()
 author_names = df['Auteur'].unique()
-pubisher_names = df['Editeur'].unique()
+publisher_names = df['Editeur'].unique()
 
 author_labels = variable_cluster('Auteur')
 publisher_labels = variable_cluster('Editeur')
 country_labels = variable_cluster('Pays')
+
+title_author_labels = reestablish_labels('Auteur',author_names,author_labels)
+title_publisher_labels = reestablish_labels('Editeur',publisher_names,publisher_labels)
+title_country_labels = reestablish_labels('Editeur',country_names,country_labels)
+
+results = [title_author_labels,title_publisher_labels,title_country_labels]
+df1 = pd.DataFrame(results)
+df1 = df1.transpose()
+df1.columns = ["Auteur_labels","Editeur_labels","Pays_labels"]
+
+df1.to_csv(file_to_write)
