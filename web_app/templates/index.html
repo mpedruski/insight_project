@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Demand predictor</title>
+
+</head>
+
+<body id="page-top">
+
+ <!-- Takes in input and yields output -->
+<section class="bg-primary mb-0" id="try">
+  <div class="container">
+    <h2 class="text-center text-white">Title demand predictor</h2>
+          <div class="col-sm m-3 text-center">
+                <form action="/output" method="GET" id="user_input">
+                      <label for = "title">Book title :</label>
+                      <input class="form-control" type="text" id="user_input" name='title' placeholder="e.g. Harry Potter and the Philosopher's Stone">
+                      <label for = "author">Author name :</label>
+                      <input class="form-control" type="text" id="user_input" name='author' placeholder="e.g. Proust, Marcel">
+                      <label for = "publisher">Publisher name :</label>
+                      <input class="form-control" type="text" id="user_input" name='publisher' placeholder="e.g. Gallimard,">
+                      <label for = "country">Country code:</label>
+                      <input class="form-control" type="text" id="user_input" name='country' placeholder="e.g. quc">
+                      <label for = "type_info">Document type:</label>
+                      <input class="form-control" type="text" id="user_input" name='type_info' placeholder="e.g. LV_Fiction J">
+                </form>
+          </div>
+   <div class="row justify-content-center">
+         <button type="submit" class="btn btn-secondary btn-lg"
+     form="user_input">Go!</button>
+  </div>
+
+  {% if my_form_result=='Empty' %}
+  <div class="row mt-4 justify-content-center">
+        <h4 class="text-danger text-center text-uppercase">At least one field is missing input.</h4>
+  </div>
+
+  {% elif my_form_result=='NotEmpty' %}
+
+  <div class="row mt-4 justify-content-center">
+        <h4 class="text-light text-center text-uppercase">Results:</h4>
+  </div>
+  <div class="row p-1 m-1 justify-content-center">
+        <div class="col-md- w-50 list-group">
+               <ul class="list-group">
+               <h4 class="text-center">
+                  <p>{{my_input}}</p>
+                  <p>{{my_output}}</p>
+              </h4>
+              </ul>
+        </div>
+  </div>
+
+  {% else %}
+  {% endif %}
+  </div>
+</section>
+
+</body>
+
+</html>

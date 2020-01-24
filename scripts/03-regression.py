@@ -34,10 +34,10 @@ onehotlabels_train = enc.transform(x_train)
 onehotlabels_test = enc.transform(x_test)
 ### Regress onehot encoded features on variable to predict, and test against
 ### test set
-clf = SGDRegressor(max_iter=1000, tol=1e-3)
+clf = SGDRegressor(max_iter=10000, tol=1e-3)
 clf_model = clf.fit(onehotlabels_train,y_train)
 R2 = clf_model.score(onehotlabels_test,y_test)
-
+print(R2)
 ### Save model parameters
 dump(clf_model, model_parameters)
 dump(enc, encoding_parameters)
