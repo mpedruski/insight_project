@@ -1,8 +1,8 @@
-# Leave it on the shelf
+# Why not buy 2?
 
 ## Introduction
 
-Leave it on the shelf offers a simple tool for librarians and libraries to determine whether a document in a library catalogue is likely to be borrowed or not. This will help librarians make decisions about collections management in an era where the public-facing aspect of libraries are changing.
+Why not buy 2? offers a simple demand tool for vendors to predict the demand for an item by leveraging information stored in their catalogue. It's current implementation uses the catalogue of the Montreal library system to predict the instantaneous demand for new titles based on four simple title characteristics: author, publisher, country of publication, and type of book.
 
 ## Directory structure
 
