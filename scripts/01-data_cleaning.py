@@ -43,11 +43,15 @@ def determine_exclude(file, nrows):
     cats = df['Type-document'].unique()
     book_cats = {cat for cat in cats if "LV" in cat}
 
-    ## Which rows of the dataset don't refer to books
-    exclude = []
-    for i in range(len(df['Type-document'])):
-        if df['Type-document'][i] not in book_cats:
-            exclude.append(i+1)
+    exclude = np.where(~df['Type-document'].isin(book_cats)==True)[0]+1
+    # print(exclude)
+    # # Which rows of the dataset don't refer to books
+    # exclude = df[~df['Type-document'].isin(book_cats)]
+    # exclude = []
+    # for i in range(len(df['Type-document'])):
+    #     if df['Type-document'][i] not in book_cats:
+    #         exclude.append(i+1)
+    # print(exclude)
     return exclude
 
 def numericize_availability(isbns):
@@ -75,18 +79,17 @@ def text_remove_from_numeric_data(uncleaned_list):
     return cleaned_list
 
 print(datetime.datetime.now())
-
 ### Determine paths to datasets
 data_folder = Path("../data/raw")
 test_folder = Path("../data/test")
-output_folder = Path("../data/test")
+output_folder = Path("../data/cleaned")
 
 file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
-file_to_write = test_folder / 'by_titles.csv'
+file_to_write = output_folder / 'by_titles.csv'
 # test_file = test_folder / 'biblioMTL_small_test.csv'
-test_file = test_folder / 'biblioMTL_big_test.csv'
+# test_file = test_folder / 'biblioMTL_big_test.csv'
 
-nrows = 35000
+nrows = None
 
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(file_to_open,nrows)
