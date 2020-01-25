@@ -7,27 +7,13 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
-def combine_numeric_data(isn, variable):
-    '''(str, str) -> int
-    Accepts an ISBN value and a variable of interest, and returns
-    the total sum of the variable over all the items that have that ISBN.'''
-    count = sum(df.loc[df['ISN'].isin([isn]), variable])
-    return count
-
-def total_copies(isn):
-    '''(str) -> int
-    Accepts an ISBN value and returns the total number of items that have
-    that ISBN.'''
-    all_copies = len(df.loc[df['ISN'].isin([isn]), 'ISN'])
-    return all_copies
-
-def aquire_trait(isn,trait):
+def aquire_trait(trait):
     ''' (str, str) -> str
     Accepts an ISBN value and a variable of interest, and returns the value
     of the variable of interest for the first item with that ISBN, if a value
     exists.'''
     try:
-        aspect = df.loc[df['ISN'].isin([isn])].iat[0,column_headers[trait]]
+        aspect = df.groupby('ISN')[trait].first()
     except:
         aspect = None
     return aspect
@@ -44,14 +30,6 @@ def determine_exclude(file, nrows):
     book_cats = {cat for cat in cats if "LV" in cat}
 
     exclude = np.where(~df['Type-document'].isin(book_cats)==True)[0]+1
-    # print(exclude)
-    # # Which rows of the dataset don't refer to books
-    # exclude = df[~df['Type-document'].isin(book_cats)]
-    # exclude = []
-    # for i in range(len(df['Type-document'])):
-    #     if df['Type-document'][i] not in book_cats:
-    #         exclude.append(i+1)
-    # print(exclude)
     return exclude
 
 def numericize_availability(isbns):
@@ -94,53 +72,40 @@ nrows = None
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(file_to_open,nrows)
 
-### Clean and collate variables of interest on a per-title basis
+### Clean and collate variables of interest on a per-ISBN basis
 df = pd.read_csv(file_to_open, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,19],
-    skiprows=exclude,nrows=(nrows-len(exclude)))
+    skiprows=exclude,nrows=nrows)
 
-column_headers = {}
-column_head = df.columns.values
-column_headers.update(zip(column_head, range(len(column_head))))
-### Find list of unique ISNs in collection
+df['ISN'] = text_remove_from_numeric_data(df['ISN'])
+### Isolate set of unique ISBNs
 isns = df['ISN'].unique()
-### Convert availability of titles to numeric values
+### Convert availability of items to numeric values
 df['Statut-document'] = numericize_availability(isns)
+### Count availability, lifetime borrows, and total copie availability by ISBN
+available_count = df.groupby('ISN')['Statut-document'].sum()
+lifetime_count = df.groupby('ISN')['Nombre-prets-vie'].sum()
+total_count = df.groupby('ISN')['ISN'].count()
 ### Clean year and page data
 df['Annee'] = text_remove_from_numeric_data(df['Annee'])
 df['Nombre-pages'] = text_remove_from_numeric_data(df['Nombre-pages'])
 
-### Creating lists for variables to combine into a reduced dataframe
-logging.debug('Initiating available count')
-# print(combine_numeric_data('2234019338 (br.)','Statut-document'))
-available_count = [combine_numeric_data(i,'Statut-document') for i in isns]
-logging.debug('Initiating lifetime count')
-lifetime_count = [combine_numeric_data(i,'Nombre-prets-vie') for i in isns]
-logging.debug('Initiating total count')
-total_count = [total_copies(i) for i in isns]
-logging.debug('Initiating demand count')
+### Caculated demand for ISBNs by subtracting number available from total number
 demand_count = []
 for i in range(len(available_count)):
     demand_count.append(total_count[i]-available_count[i])
-columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document']
-results = [[],[],[],[],[],[],[],[]]
+
+### Find the first entry for each ISBN for each of the traits in columns to build
 logging.debug('Inputting uniform text for all items that share a ISBN')
+columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document']
+results = [aquire_trait(i) for i in columns_to_build]
 
-for i in range(len(columns_to_build)):
-    for j in isns:
-        results[i].append(aquire_trait(j,columns_to_build[i]))
-    # results[i] = [aquire_trait(j,columns_to_build[i]) for j in isns]
-
-### After all processing is complete, clean ISBN data
-isns = text_remove_from_numeric_data(isns)
-### Build and join datasets based on list results, export to csv
-
-
+### Join datasets, remove rows for which data is missing, and export to csv
 df1 = pd.DataFrame(results)
 logging.debug('Beginning transpose')
 df1 = df1.transpose()
 logging.debug('Done transpose')
 df1.columns = columns_to_build
-df2 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'Lifetime':lifetime_count,'ISBN':isns})
+df2 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'Lifetime':lifetime_count})
 df1 = df1.join(df2)
 df1 = df1.dropna()
 df1.to_csv(file_to_write)
