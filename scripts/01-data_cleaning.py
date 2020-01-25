@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import numpy as np
 import datetime
 import re
 import logging
@@ -7,16 +8,26 @@ import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
 def combine_numeric_data(isn, variable):
-    documents = df.loc[df['ISN'] == isn]
-    count = sum(documents[variable])
+    '''(str, str) -> int
+    Accepts an ISBN value and a variable of interest, and returns
+    the total sum of the variable over all the items that have that ISBN.'''
+    documents = df.iloc[np.where(df['ISN'] == isn)[0],column_headers[variable]]
+    count = documents.sum()
     return count
 
 def total_copies(isn):
+    '''(str) -> int
+    Accepts an ISBN value and returns the total number of items that have
+    that ISBN.'''
     documents = df.loc[df['ISN'] == isn]
     all_copies = len(documents)
     return all_copies
 
 def aquire_trait(isn,trait):
+    ''' (str, str) -> star
+    Accepts an ISBN value and a variable of interest, and returns the value
+    of the variable of interest for the first item with that ISBN, if a value
+    exists.'''
     documents = df.loc[df['ISN'] == isn]
     try:
         aspect = documents[trait].iloc[0]
@@ -25,6 +36,11 @@ def aquire_trait(isn,trait):
     return aspect
 
 def determine_exclude(file, nrows):
+    ''' (file, int) -> [int]
+    Accepts a CSV file name and an integer, reading the first 'integer' rows
+    of the CSV into a datagrame, analyzes the type of item in the row,
+    and if the type is not a book appends the items index number to a list
+    of titles to be excluded from later analysis.'''
     df = pd.read_csv(file,usecols=[6],nrows=nrows)
     ### Isolate categories of document that refer to books
     df['Type-document']=df['Type-document'].astype('category')
@@ -39,6 +55,9 @@ def determine_exclude(file, nrows):
     return exclude
 
 def numericize_availability(isbns):
+    '''[str] -> [int]
+    Iterates through all the items in a pandas df, returning the value 1
+    if the item is available, and 0 if it is not.'''
     ### Convert ISN = disponible to 1, otherwise leave as 0
     avails = []
     df_isn = df['Statut-document']
@@ -50,6 +69,9 @@ def numericize_availability(isbns):
     return avails
 
 def text_remove_from_numeric_data(uncleaned_list):
+    '''[str] -> [int]
+    Accepts a list of strings that are fundamentally numeric data with string
+    formatting, and returns a list of numeric items only'''
     logging.debug('Text remove from numeric: Length of list pre formatting = {}'.format(len(uncleaned_list)))
     cleaned_list = []
     pattern = re.compile(r'[0-9]+')
@@ -67,14 +89,14 @@ print(datetime.datetime.now())
 ### Determine paths to datasets
 data_folder = Path("../data/raw")
 test_folder = Path("../data/test")
-output_folder = Path("../data/cleaned")
+output_folder = Path("../data/test")
 
 file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
 file_to_write = test_folder / 'by_titles.csv'
 # test_file = test_folder / 'biblioMTL_small_test.csv'
 test_file = test_folder / 'biblioMTL_big_test.csv'
 
-nrows = 10000
+nrows = 5000
 
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(file_to_open,nrows)
@@ -82,6 +104,11 @@ exclude = determine_exclude(file_to_open,nrows)
 ### Clean and collate variables of interest on a per-title basis
 df = pd.read_csv(file_to_open, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,19],
     skiprows=exclude,nrows=(nrows-len(exclude)))
+
+column_headers = {}
+column_head = df.columns.values
+column_headers.update(zip(column_head, range(len(column_head))))
+
 ### Find list of unique ISNs in collection
 isns = df['ISN'].unique()
 ### Convert availability of titles to numeric values
@@ -107,6 +134,26 @@ logging.debug('Inputting uniform text for all items that share a ISBN')
 
 for i in range(len(columns_to_build)):
     results[i] = [aquire_trait(j,columns_to_build[i]) for j in isns]
+
+### Actually slightly longer than the double loop implementation.
+# logging.debug('Inputting uniform Titre text for all items that share a ISBN')
+# Title_data = [aquire_trait(j,'Titre') for j in isns]
+# logging.debug('Inputting uniform Auteur text for all items that share a ISBN')
+# Auteur_data = [aquire_trait(j,'Auteur') for j in isns]
+# logging.debug('Inputting uniform Editeur text for all items that share a ISBN')
+# Editeur_data = [aquire_trait(j,'Editeur') for j in isns]
+# logging.debug('Inputting uniform Lieu text for all items that share a ISBN')
+# Lieu_data = [aquire_trait(j,'Lieu') for j in isns]
+# logging.debug('Inputting uniform Pays text for all items that share a ISBN')
+# Pays_data = [aquire_trait(j,'Pays') for j in isns]
+# logging.debug('Inputting uniform Annee text for all items that share a ISBN')
+# Annee_data = [aquire_trait(j,'Annee') for j in isns]
+# logging.debug('Inputting uniform Nombre-pages text for all items that share a ISBN')
+# Nombre_pages_data = [aquire_trait(j,'Nombre-pages') for j in isns]
+# logging.debug('Inputting uniform Langue text for all items that share a ISBN')
+# Langue_data = [aquire_trait(j,'Langue') for j in isns]
+# logging.debug('Inputting uniform Type-document text for all items that share a ISBN')
+# Type_document_data = [aquire_trait(j,'Type-document') for j in isns]
 
 ### After all processing is complete, clean ISBN data
 isns = text_remove_from_numeric_data(isns)
