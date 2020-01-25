@@ -11,26 +11,23 @@ def combine_numeric_data(isn, variable):
     '''(str, str) -> int
     Accepts an ISBN value and a variable of interest, and returns
     the total sum of the variable over all the items that have that ISBN.'''
-    documents = df.iloc[np.where(df['ISN'] == isn)[0],column_headers[variable]]
-    count = documents.sum()
+    count = sum(df.loc[df['ISN'].isin([isn]), variable])
     return count
 
 def total_copies(isn):
     '''(str) -> int
     Accepts an ISBN value and returns the total number of items that have
     that ISBN.'''
-    documents = df.loc[df['ISN'] == isn]
-    all_copies = len(documents)
+    all_copies = len(df.loc[df['ISN'].isin([isn]), 'ISN'])
     return all_copies
 
 def aquire_trait(isn,trait):
-    ''' (str, str) -> star
+    ''' (str, str) -> str
     Accepts an ISBN value and a variable of interest, and returns the value
     of the variable of interest for the first item with that ISBN, if a value
     exists.'''
-    documents = df.loc[df['ISN'] == isn]
     try:
-        aspect = documents[trait].iloc[0]
+        aspect = df.loc[df['ISN'].isin([isn])].iat[0,column_headers[trait]]
     except:
         aspect = None
     return aspect
@@ -43,11 +40,10 @@ def determine_exclude(file, nrows):
     of titles to be excluded from later analysis.'''
     df = pd.read_csv(file,usecols=[6],nrows=nrows)
     ### Isolate categories of document that refer to books
-    df['Type-document']=df['Type-document'].astype('category')
     cats = df['Type-document'].unique()
     book_cats = {cat for cat in cats if "LV" in cat}
 
-    ### Which rows of the dataset don't refer to books
+    ## Which rows of the dataset don't refer to books
     exclude = []
     for i in range(len(df['Type-document'])):
         if df['Type-document'][i] not in book_cats:
@@ -59,13 +55,7 @@ def numericize_availability(isbns):
     Iterates through all the items in a pandas df, returning the value 1
     if the item is available, and 0 if it is not.'''
     ### Convert ISN = disponible to 1, otherwise leave as 0
-    avails = []
-    df_isn = df['Statut-document']
-    for i in range(len(df_isn)):
-        if df_isn[i] == 'Disponible':
-            avails.append(1)
-        else:
-            avails.append(0)
+    avails = df['Statut-document'].isin(['Disponible'])
     return avails
 
 def text_remove_from_numeric_data(uncleaned_list):
@@ -96,7 +86,7 @@ file_to_write = test_folder / 'by_titles.csv'
 # test_file = test_folder / 'biblioMTL_small_test.csv'
 test_file = test_folder / 'biblioMTL_big_test.csv'
 
-nrows = 5000
+nrows = 35000
 
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(file_to_open,nrows)
@@ -108,7 +98,6 @@ df = pd.read_csv(file_to_open, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,1
 column_headers = {}
 column_head = df.columns.values
 column_headers.update(zip(column_head, range(len(column_head))))
-
 ### Find list of unique ISNs in collection
 isns = df['ISN'].unique()
 ### Convert availability of titles to numeric values
@@ -119,6 +108,7 @@ df['Nombre-pages'] = text_remove_from_numeric_data(df['Nombre-pages'])
 
 ### Creating lists for variables to combine into a reduced dataframe
 logging.debug('Initiating available count')
+# print(combine_numeric_data('2234019338 (br.)','Statut-document'))
 available_count = [combine_numeric_data(i,'Statut-document') for i in isns]
 logging.debug('Initiating lifetime count')
 lifetime_count = [combine_numeric_data(i,'Nombre-prets-vie') for i in isns]
@@ -128,32 +118,14 @@ logging.debug('Initiating demand count')
 demand_count = []
 for i in range(len(available_count)):
     demand_count.append(total_count[i]-available_count[i])
-columns_to_build = ['Titre','Auteur','Editeur','Lieu','Pays','Annee','Nombre-pages','Langue','Type-document']
-results = [[],[],[],[],[],[],[],[],[]]
+columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document']
+results = [[],[],[],[],[],[],[],[]]
 logging.debug('Inputting uniform text for all items that share a ISBN')
 
 for i in range(len(columns_to_build)):
-    results[i] = [aquire_trait(j,columns_to_build[i]) for j in isns]
-
-### Actually slightly longer than the double loop implementation.
-# logging.debug('Inputting uniform Titre text for all items that share a ISBN')
-# Title_data = [aquire_trait(j,'Titre') for j in isns]
-# logging.debug('Inputting uniform Auteur text for all items that share a ISBN')
-# Auteur_data = [aquire_trait(j,'Auteur') for j in isns]
-# logging.debug('Inputting uniform Editeur text for all items that share a ISBN')
-# Editeur_data = [aquire_trait(j,'Editeur') for j in isns]
-# logging.debug('Inputting uniform Lieu text for all items that share a ISBN')
-# Lieu_data = [aquire_trait(j,'Lieu') for j in isns]
-# logging.debug('Inputting uniform Pays text for all items that share a ISBN')
-# Pays_data = [aquire_trait(j,'Pays') for j in isns]
-# logging.debug('Inputting uniform Annee text for all items that share a ISBN')
-# Annee_data = [aquire_trait(j,'Annee') for j in isns]
-# logging.debug('Inputting uniform Nombre-pages text for all items that share a ISBN')
-# Nombre_pages_data = [aquire_trait(j,'Nombre-pages') for j in isns]
-# logging.debug('Inputting uniform Langue text for all items that share a ISBN')
-# Langue_data = [aquire_trait(j,'Langue') for j in isns]
-# logging.debug('Inputting uniform Type-document text for all items that share a ISBN')
-# Type_document_data = [aquire_trait(j,'Type-document') for j in isns]
+    for j in isns:
+        results[i].append(aquire_trait(j,columns_to_build[i]))
+    # results[i] = [aquire_trait(j,columns_to_build[i]) for j in isns]
 
 ### After all processing is complete, clean ISBN data
 isns = text_remove_from_numeric_data(isns)
