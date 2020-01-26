@@ -17,12 +17,16 @@ def predict_title(author, publisher, country, doc_type):
 
 ### Determine paths to datasets and load into pandas dataframe
 # test_folder = Path("../data/test")
-processed_folder = Path("/home/mpedruski/Documents/Insight/Insight_Project/data/processed/")
-variable_data = processed_folder / 'cluster_labels_for_each_variable.csv'
+processed_folder = Path("../data/processed/")
+test_folder = Path("../data/test/")
+variable_data = test_folder / 'cluster_labels_for_each_variable.csv'
 model_data = processed_folder / 'SGD_model_parameters.joblib'
 encoding_data = processed_folder / 'OHE_parameters.joblib'
 
 df = pd.read_csv(variable_data)
+# df = pd.read_csv(variable_data,dtype={'ID':'int','Author_names':'str','Author_labels':'int',
+#     'Publisher_names':'str','Publisher_labels':'int','Country_names':'int',
+#     'Country_labels':'int','Type_names':'str','Type_labels':'int'})
 ### Load in label data to categorize new title:
 
 author_labels = df.set_index('Author_names')['Author_labels'].to_dict()

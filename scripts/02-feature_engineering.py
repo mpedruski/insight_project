@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 from sklearn.datasets import make_blobs
 
-logging.basicConfig(level=logging.CRITICAL,format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def variable_cluster(variable):
@@ -73,7 +73,7 @@ file_to_open = data_folder / 'by_titles.csv'
 title_label_data = processed_folder / 'cluster_labels_for_each_title.csv'
 variable_label_data = processed_folder / 'cluster_labels_for_each_variable.csv'
 
-df = pd.read_csv(file_to_open,nrows=10000)
+df = pd.read_csv(file_to_open,nrows=46508)
 logging.debug('Beginning analysis')
 
 ### Process author, publisher, and country data

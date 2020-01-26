@@ -5,6 +5,8 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
 
   <title>Demand predictor</title>
 
@@ -15,7 +17,7 @@
  <!-- Takes in input and yields output -->
 <section class="bg-primary mb-0" id="try">
   <div class="container">
-    <h2 class="text-center text-white">Title demand predictor</h2>
+    <h2 class="text-center">Title demand predictor</h2>
           <div class="col-sm m-3 text-center">
                 <form action="/output" method="GET" id="user_input">
                       <label for = "title">Book title :</label>
@@ -30,9 +32,9 @@
                       <input class="form-control" type="text" id="user_input" name='type_info' placeholder="e.g. LV_Fiction J">
                 </form>
           </div>
-   <div class="row justify-content-center">
-         <button type="submit" class="btn btn-secondary btn-lg"
-     form="user_input">Go!</button>
+          <p></p>
+   <div class="justify-content-center">
+         <button type="submit" class="btn-lg btn-warning" form="user_input">Go!</button>
   </div>
 
   {% if my_form_result=='Empty' %}
