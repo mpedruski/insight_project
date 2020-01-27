@@ -37,6 +37,7 @@ def numericize_availability(isbns):
     Iterates through all the items in a pandas df, returning the value 1
     if the item is available, and 0 if it is not.'''
     ### Convert ISN = disponible to 1, otherwise leave as 0
+    logging.debug(df['Statut-document'].unique())
     avails = df['Statut-document'].isin(['Disponible'])
     return avails
 
@@ -56,6 +57,46 @@ def text_remove_from_numeric_data(uncleaned_list):
     logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
     return cleaned_list
 
+def author_formatting(uncleaned_list):
+    '''[str] -> [int]
+    Accepts a list of items that contain unformatted author names, and isolates
+    author first name, last name, and middle initial without surrounding
+    punctuation/formatting.'''
+    logging.debug('Author formatting: Length of list pre formatting = {}'.format(len(uncleaned_list)))
+    cleaned_list = []
+    pattern = re.compile(r'[a-zA-ZÀ-ÿ].*[a-zA-ZÀ-ÿ](, [a-zA-ZÀ-ÿ].*[a-zA-ZÀ-ÿ])?([a-zA-ZÀ-ÿ])?')
+    for uncleaned_item in uncleaned_list:
+        if isinstance(uncleaned_item, str):
+            pattern_output = pattern.search(str(uncleaned_item))
+            if pattern_output is None:
+                cleaned_list.append(None)
+            else:
+                cleaned_list.append(pattern_output.group())
+        else:
+            cleaned_list.append(None)
+    logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
+    return cleaned_list
+
+def location_formatting(uncleaned_list):
+    '''[str] -> [int]
+    Accepts a list of items that contain unformatted author names, and isolates
+    author first name, last name, and middle initial without surrounding
+    punctuation/formatting.'''
+    logging.debug('Location formatting: Length of list pre formatting = {}'.format(len(uncleaned_list)))
+    cleaned_list = []
+    pattern = re.compile(r'[a-zA-ZÀ-ÿ].*[a-zA-ZÀ-ÿ]')
+    for uncleaned_item in uncleaned_list:
+        if isinstance(uncleaned_item, str):
+            pattern_output = pattern.search(str(uncleaned_item))
+            if pattern_output is None:
+                cleaned_list.append(None)
+            else:
+                cleaned_list.append(pattern_output.group())
+        else:
+            cleaned_list.append(None)
+    logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
+    return cleaned_list
+
 print(datetime.datetime.now())
 ### Determine paths to datasets
 data_folder = Path("../data/raw")
@@ -63,11 +104,11 @@ test_folder = Path("../data/test")
 output_folder = Path("../data/cleaned")
 
 file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
-file_to_write = output_folder / 'by_titles.csv'
+file_to_write = test_folder / 'by_titles.csv'
 # test_file = test_folder / 'biblioMTL_small_test.csv'
 # test_file = test_folder / 'biblioMTL_big_test.csv'
 
-nrows = None
+nrows = 50000
 
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(file_to_open,nrows)
@@ -75,7 +116,8 @@ exclude = determine_exclude(file_to_open,nrows)
 ### Clean and collate variables of interest on a per-ISBN basis
 df = pd.read_csv(file_to_open, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,19],
     skiprows=exclude,nrows=nrows)
-
+### Numericize ISBNs to make for faster handling and to prevent duplicates
+### and to feed to other variables for their grouping
 df['ISN'] = text_remove_from_numeric_data(df['ISN'])
 ### Isolate set of unique ISBNs
 isns = df['ISN'].unique()
@@ -85,9 +127,14 @@ df['Statut-document'] = numericize_availability(isns)
 available_count = df.groupby('ISN')['Statut-document'].sum()
 lifetime_count = df.groupby('ISN')['Nombre-prets-vie'].sum()
 total_count = df.groupby('ISN')['ISN'].count()
-### Clean year and page data
+### Clean year and page data by removing text
 df['Annee'] = text_remove_from_numeric_data(df['Annee'])
 df['Nombre-pages'] = text_remove_from_numeric_data(df['Nombre-pages'])
+### Clean author data by removiing unnecessary formatting
+df['Auteur'] = author_formatting(df['Auteur'])
+logging.debug('Number of unique authors: {}'.format(len(df['Auteur'].unique())))
+df['Lieu'] = location_formatting(df['Lieu'])
+logging.debug('Number of unique locations: {}'.format(len(df['Lieu'].unique())))
 
 ### Caculated demand for ISBNs by subtracting number available from total number
 demand_count = []
@@ -96,7 +143,7 @@ for i in range(len(available_count)):
 
 ### Find the first entry for each ISBN for each of the traits in columns to build
 logging.debug('Inputting uniform text for all items that share a ISBN')
-columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document']
+columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document','Lieu']
 results = [aquire_trait(i) for i in columns_to_build]
 
 ### Join datasets, remove rows for which data is missing, and export to csv
