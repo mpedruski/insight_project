@@ -24,12 +24,21 @@ def determine_exclude(file, nrows):
     of the CSV into a datagrame, analyzes the type of item in the row,
     and if the type is not a book appends the items index number to a list
     of titles to be excluded from later analysis.'''
-    df = pd.read_csv(file,usecols=[6],nrows=nrows)
+    df = pd.read_csv(file,usecols=[5,6],nrows=nrows)
     ### Isolate categories of document that refer to books
     cats = df['Type-document'].unique()
     book_cats = {cat for cat in cats if "LV" in cat}
+    ### Isolate categories of document that are available or in use, not
+    ### lost or pulled from the collection (and thus irrelevant)
+    use_cats = {'Disponible','Prêté','En transit','Consultation sur place',
+        'En traitement','Recherché'}
 
-    exclude = np.where(~df['Type-document'].isin(book_cats)==True)[0]+1
+    exclude_books = np.where(~df['Type-document'].isin(book_cats)==True)[0]+1
+    logging.debug('Not a book: {}'.format(exclude_books))
+    exclude_use = np.where(~df['Statut-document'].isin(use_cats)==True)[0]+1
+    logging.debug('Neither available or demanded: {}'.format(exclude_use))
+    exclude = np.unique(np.concatenate([exclude_books, exclude_use]))
+    logging.debug('Items to exclude: {}'.format(exclude))
     return exclude
 
 def numericize_availability(isbns):
@@ -100,15 +109,15 @@ def location_formatting(uncleaned_list):
 print(datetime.datetime.now())
 ### Determine paths to datasets
 data_folder = Path("../data/raw")
-test_folder = Path("../data/test")
+# test_folder = Path("../data/test")
 output_folder = Path("../data/cleaned")
 
 file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
-file_to_write = test_folder / 'by_titles.csv'
+file_to_write = output_folder / 'by_titles.csv'
 # test_file = test_folder / 'biblioMTL_small_test.csv'
 # test_file = test_folder / 'biblioMTL_big_test.csv'
 
-nrows = 50000
+nrows = None
 
 ### Determine which rows of dataset refer to books
 exclude = determine_exclude(file_to_open,nrows)
