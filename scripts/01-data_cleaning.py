@@ -106,6 +106,29 @@ def location_formatting(uncleaned_list):
     logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
     return cleaned_list
 
+def publisher_formatting(uncleaned_list):
+    '''[str] -> [int]
+    Accepts a list of publisher names, removes common words, and then uses REGEX
+    to remove punctuation to create uniform author names'''
+    logging.debug('Publisher formatting: Length of list pre formatting = {}'.format(len(uncleaned_list)))
+    cleaned_list = []
+    stop_words = ['publishers','books','book','co.','ltée','canada', ' ']
+    for uncleaned_item in uncleaned_list:
+        if isinstance(uncleaned_item, str):
+            uncleaned_item=uncleaned_item.lower()
+            for j in stop_words:
+                uncleaned_item = uncleaned_item.replace(j,'')
+            pattern = re.compile(r'[a-zA-ZÀ-ÿ].*[a-zA-ZÀ-ÿ]')
+            pattern_output = pattern.search(str(uncleaned_item))
+            if pattern_output is None:
+                cleaned_list.append(None)
+            else:
+                cleaned_list.append(pattern_output.group())
+        else:
+            cleaned_list.append(None)
+    logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
+    return cleaned_list
+
 print(datetime.datetime.now())
 ### Determine paths to datasets
 data_folder = Path("../data/raw")
@@ -144,6 +167,8 @@ df['Auteur'] = author_formatting(df['Auteur'])
 logging.debug('Number of unique authors: {}'.format(len(df['Auteur'].unique())))
 df['Lieu'] = location_formatting(df['Lieu'])
 logging.debug('Number of unique locations: {}'.format(len(df['Lieu'].unique())))
+df['Editeur'] = publisher_formatting(df['Editeur'])
+logging.debug('Number of unique publishers: {}'.format(len(df['Editeur'].unique())))
 
 ### Caculated demand for ISBNs by subtracting number available from total number
 demand_count = []

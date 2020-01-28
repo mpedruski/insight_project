@@ -7,8 +7,7 @@ import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 from sklearn.datasets import make_blobs
 
-logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
-
+logging.basicConfig(level=logging.CRITICAL,format='%(asctime)s - %(levelname)s - %(message)s')
 
 def variable_cluster(variable):
     '''Returns cluster labels each instance of a variable, based on the number
@@ -66,29 +65,32 @@ def limited_categorical_variable_numericizer(variable):
     return label_column
 
 ### Determine paths to datasets and load into pandas dataframe
-# test_folder = Path("../data/test")
+
 data_folder = Path("../data/cleaned")
+# test_folder = Path("../data/test")
 processed_folder = Path("../data/processed")
 file_to_open = data_folder / 'by_titles.csv'
 title_label_data = processed_folder / 'cluster_labels_for_each_title.csv'
 variable_label_data = processed_folder / 'cluster_labels_for_each_variable.csv'
 
-df = pd.read_csv(file_to_open,nrows=46508)
-logging.debug('Beginning analysis')
+df = pd.read_csv(file_to_open,nrows=None)
+logging.critical('Beginning analysis')
 
 ### Process author, publisher, and country data
-logging.debug('Counting number of ISBNs associated with a variable')
-### Identify how many ISBNs are associated with each author, publisher,
+logging.critical('Counting number of ISBNs associated with a variable')
+
+### Identify how many lifetime borrows are associated with each author, publisher,
 ### or country
-author_count = df.groupby('Auteur')['ISN'].count()
-publisher_count = df.groupby('Editeur')['ISN'].count()
-country_count = df.groupby('Pays')['ISN'].count()
+author_count = df.groupby('Auteur')['Lifetime'].sum()
+publisher_count = df.groupby('Editeur')['Lifetime'].sum()
+country_count = df.groupby('Pays')['Lifetime'].sum()
 author_names = df.groupby('Auteur')['Auteur'].first()
 publisher_names = df.groupby('Editeur')['Editeur'].first()
 country_names = df.groupby('Pays')['Pays'].first()
-### Cluster authors, publishers, and countries based on the number of publications
-### attributed to them
-logging.debug('Beginning clustering')
+
+### Cluster authors, publishers, and countries based on the lifetime number
+### of borrows for them
+logging.critical('Beginning clustering')
 author_labels = variable_cluster(author_count)
 author_names_values = author_names.values
 author_data = [author_names_values,author_labels]
@@ -109,19 +111,23 @@ dfc = pd.DataFrame(country_data).transpose()
 dfc.columns = ['Variable','Label']
 
 ### Attaching results of clustering (labels) to each ISBN in the catalogue
-logging.debug('Linking cluster labels to names')
+logging.critical('Linking cluster labels to names')
 title_author_labels = reestablish_labels('Auteur',dfa)
 logging.debug("Vector of labels for author = {} ".format(title_author_labels))
 logging.debug("Vector of author names = {} ".format(df['Auteur']))
+logging.critical('Linking cluster labels to names')
 title_publisher_labels = reestablish_labels('Editeur',dfp)
+logging.critical('Linking cluster labels to names')
 title_country_labels = reestablish_labels('Pays',dfc)
 
 ### Giving category numbers to variables that don't have enough levels to merit
 ### clustering
-logging.debug('Manipulating year data and categorizing document type and language')
-year_column = year_offset(2019)
+logging.critical('Manipulating year data and categorizing document type and language')
+year_column = year_offset(2020)
 document_type_column = limited_categorical_variable_numericizer('Type-document')
 language_type_column = limited_categorical_variable_numericizer('Langue')
+
+logging.critical('Saving output')
 
 ### Export data set for each title
 results = [title_author_labels,title_publisher_labels,title_country_labels,year_column,
