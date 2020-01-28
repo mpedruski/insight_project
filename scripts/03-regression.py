@@ -1,13 +1,16 @@
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDRegressor
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
 from joblib import dump
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import datetime
 import logging
+
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
 ### Regression based on historical data
 
@@ -22,16 +25,24 @@ df = pd.read_csv(file_to_open)
 
 ### Select variable to predict as well as features to be used
 y = df['Demand']
-x = df[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']]
+x = df[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels',
+    'Years_offset','Nombre_pages']]
 
 ### Split dataset into training and testing components
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
 
 ### One hot encode categorical features
 enc = OneHotEncoder(sparse=False)
-enc.fit(x)
-onehotlabels_train = enc.transform(x_train)
-onehotlabels_test = enc.transform(x_test)
+enc.fit(x[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']])
+onehotlabels_train = enc.transform(x_train[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']])
+onehotlabels_test = enc.transform(x_test[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']])
+
+### Scale numeric features
+scaler = StandardScaler()
+scaler.fit(x_train[['Years_offset','Nombre_pages']])
+x_train = scaler.transform(x_train[['Years_offset','Nombre_pages']])
+x_test = scaler.transform(x_test[['Years_offset','Nombre_pages']])
+
 ### Regress onehot encoded features on variable to predict, and test against
 ### test set
 clf = SGDRegressor(max_iter=10000, tol=1e-3)
