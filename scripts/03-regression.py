@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from joblib import dump
 import numpy as np
 import pandas as pd
@@ -23,10 +24,23 @@ encoding_parameters = processed_folder / 'OHE_parameters.joblib'
 
 df = pd.read_csv(file_to_open)
 
+### Find length of majority and minority class data
+minority_class_len = len(df[df['Demand']==1])
+majority_class_indices = df[df['Demand']==0].index
+
+### Generate a list of majority class indices to retain, based on how many minority
+### class data their are
+random_majority_indices = np.random.choice(majority_class_indices, minority_class_len,
+    replace = False)
+### Make list of minority class indices and combine with majority class indices
+### then define dataset as the rows of the dataset from those indices
+minority_class_indices = df[df['Demand']>0].index
+under_sample_indices = np.concatenate([minority_class_indices,random_majority_indices])
+df = df.loc[under_sample_indices]
+
 ### Select variable to predict as well as features to be used
 y = df['Demand']
-x = df[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels',
-    'Years_offset','Nombre_pages']]
+x = df[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']]
 
 ### Split dataset into training and testing components
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
@@ -36,12 +50,7 @@ enc = OneHotEncoder(sparse=False)
 enc.fit(x[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']])
 onehotlabels_train = enc.transform(x_train[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']])
 onehotlabels_test = enc.transform(x_test[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels']])
-
-### Scale numeric features
-scaler = StandardScaler()
-scaler.fit(x_train[['Years_offset','Nombre_pages']])
-x_train = scaler.transform(x_train[['Years_offset','Nombre_pages']])
-x_test = scaler.transform(x_test[['Years_offset','Nombre_pages']])
+# logging.debug('Numeric features {}'.format(onehotlabels_train))
 
 ### Regress onehot encoded features on variable to predict, and test against
 ### test set
