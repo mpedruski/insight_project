@@ -26,16 +26,47 @@
                       <input class="form-control" type="text" id="user_input" name='author' placeholder="e.g. Proust, Marcel">
                       <label for = "publisher">Publisher name :</label>
                       <input class="form-control" type="text" id="user_input" name='publisher' placeholder="e.g. Gallimard,">
-                      <label for = "country">Country code:</label>
-                      <input class="form-control" type="text" id="user_input" name='country' placeholder="e.g. quc">
-                      <label for = "type_info">Document type:</label>
-                      <input class="form-control" type="text" id="user_input" name='type_info' placeholder="e.g. LV_Fiction J">
-                      <label for = "year">Year of publication:</label>
-                      <input class="form-control" type="text" id="user_input" name='year' placeholder="e.g. 1992">
                       <label for = "page_count">Number of pages:</label>
                       <input class="form-control" type="text" id="user_input" name='page_count' placeholder="e.g. 354">
-                      <label for = "language">Language of publication:</label>
-                      <input class="form-control" type="text" id="user_input" name='language' placeholder="e.g. fre">
+                      <label>Document-type</label>
+                      <select id = "user_input" name = 'type_info'>
+                        <option value = "LV_Fiction J">Fiction for children</option>
+                        <option value = 'LV_Documentaire J'>Non-fiction for children</option>
+                        <option value = "LV_Référence J">Reference for children</option>
+                        <option value = "LV_Gros caractères J">Large font for children</option>
+                        <option value = "LV_Fiction A">Fiction for adults</option>
+                        <option value = "LV_Documentaire A">Non-fiction for adults</option>
+                        <option value = "LV_Référence A">Reference for adults</option>
+                        <option value = "LV_Gros caractères A">Large font for adults</option>
+                        <option value = "LV_Braille">Braille</option>
+                      </select>
+                      <label>Language</label>
+                      <select class="mdb-select md-form colorful-select dropdown-danger" id = "user_input" name = 'language'>
+                        <option value = "fre">Français</option>
+                        <option value = "eng">English</option>
+                        <option value = "rus">Russian</option>
+                        <option value = "chi">Chinese</option>
+                        <option value = "spa">Spanish</option>
+                        <option value = "jpn">Japanese</option>
+                        <option value = "pol">Polish</option>
+                        <option value = "ita">Italian</option>
+                        <option value = "per">Persian</option>
+                        <option value = "ger">German</option>
+                        <option value = "por">Portugese</option>
+                        <option value = "gre">Greek</option>
+                        <option value = "tur">Turkish</option>
+                      </select>
+                    <label>Country of publication</label>
+                    <select class="mdb-select md-form colorful-select dropdown-danger" id = "user_input" name = 'country'>
+                      <option value = "quc">Québec</option>
+                      <option value = "be">Belgium</option>
+                      <option value = "xxc">Canada</option>
+                      <option value = "fr">France</option>
+                      <option value = "sz">Switzerland</option>
+                      <option value = "xxk">United Kingdom</option>
+                      <option value = "xxu">United States</option>
+                      <option value = "ts">Other</option>
+                    </select>
                 </form>
           </div>
           <p></p>
@@ -58,7 +89,10 @@
                <ul class="list-group">
                <h4 class="text-center">
                   <p>{{my_input}}</p>
-                  <p>{{my_output}}</p>
+                  <p>{{output_1}}</p>
+                  <p>{{output_2}}</p>
+                  <p>{{output_3}}</p>
+
               </h4>
               </ul>
         </div>

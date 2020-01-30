@@ -8,7 +8,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import plot_tree
 from sklearn.metrics import confusion_matrix
 
-from joblib import dump
+from joblib import dump, load
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -25,10 +25,18 @@ np.random.seed(31415)
 # test_folder = Path("../data/test")
 processed_folder = Path("../data/processed")
 file_to_open = processed_folder / 'cluster_labels_for_each_title.csv'
+coded_variables_file = processed_folder / 'coded_variables.joblib'
 model_parameters = processed_folder / 'decision_tree_parameters.joblib'
 
+### Loading response dataset
 df = pd.read_csv(file_to_open)
+### Loading codings of author, publisher, and country based on lifetime borrows
+var = load(coded_variables_file)
+df['Auteur_values'] = var[0]
+df['Editeur_values'] = var[1]
+df['Pays_values'] = var[2]
 
+print(df.columns)
 
 ### Find length of majority and minority class data
 minority_class_len = len(df[df['Demand']==2])
@@ -51,7 +59,7 @@ df = df.loc[under_sample_indices]
 
 ### Select variable to predict as well as features to be used
 y = df['Demand']
-x = df[['Auteur_labels','Editeur_labels','Pays_labels','Document_type_labels',
+x = df[['Auteur_values','Editeur_values','Pays_values','Document_type_labels',
     'Years_offset','Nombre_pages','Language_type_labels']]
 ### Split dataset into training and testing components
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
@@ -100,5 +108,10 @@ random_prob_test_array = np.array(random_prob_test_array)
 count = len(np.where(random_prob_test_array==y_test)[0])
 logging.debug('Accuracy if the model was predicting at random based on available ratios: {}'.format(count/total_sum))
 # logging.debug('Random accuracy: {}'.format()
+
+# print(regr_1.predict(np.array([23401,680251,2378036,1,1,223,0]).reshape(1,-1)))
+# print(regr_1.predict(np.array([23401,680251,2378036,1,3,223,0]).reshape(1,-1)))
+# print(regr_1.predict(np.array([23401,680251,2378036,1,10,223,0]).reshape(1,-1)))
+# print(regr_1.predict(np.array([0,0,0,1,1,223,0]).reshape(1,-1)))
 
 # dump(regr_1, model_parameters)
