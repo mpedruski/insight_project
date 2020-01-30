@@ -6,6 +6,8 @@ import logging
 import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 from sklearn.datasets import make_blobs
+from joblib import dump
+
 
 logging.basicConfig(level=logging.CRITICAL,format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -72,6 +74,11 @@ processed_folder = Path("../data/processed")
 file_to_open = data_folder / 'by_titles.csv'
 title_label_data = processed_folder / 'cluster_labels_for_each_title.csv'
 variable_label_data = processed_folder / 'cluster_labels_for_each_variable.csv'
+author_dictionary_file = processed_folder / 'author_dictionary_clusters.joblib'
+publisher_dictionary_file = processed_folder / 'publisher_dictionary_clusters.joblib'
+country_dictionary_file = processed_folder / 'country_dictionary_clusters.joblib'
+type_dictionary_file = processed_folder / 'type_dictionary_categories.joblib'
+language_dictionary_file = processed_folder / 'language_dictionary_categories.joblib'
 
 df = pd.read_csv(file_to_open,nrows=None)
 logging.critical('Beginning analysis')
@@ -126,7 +133,6 @@ logging.critical('Manipulating year data and categorizing document type and lang
 year_column = year_offset(2020)
 document_type_column = limited_categorical_variable_numericizer('Type-document')
 language_type_column = limited_categorical_variable_numericizer('Langue')
-
 logging.critical('Saving output')
 
 ### Export data set for each title
@@ -139,11 +145,15 @@ df1.columns = ["Auteur_labels","Editeur_labels","Pays_labels","Years_offset",
 df1.to_csv(title_label_data)
 
 ### Export data set for each variable
-variable_labels = [dfa['Variable'].values,dfa['Label'].values,dfp['Variable'].values,
-    dfp['Label'].values,dfc['Variable'].values,dfc['Label'].values,
-    df['Type-document'].unique(),range(len(df['Type-document'].unique()))]
-df2 = pd.DataFrame(variable_labels)
-df2 = df2.transpose()
-df2.columns = ["Author_names","Author_labels","Publisher_names","Publisher_labels",
-    "Country_names","Country_labels","Type_names","Type_labels"]
-df2.to_csv(variable_label_data)
+author_dict = dict(zip(author_names_values, author_labels))
+publisher_dict = dict(zip(publisher_names_values, publisher_labels))
+country_dict = dict(zip(country_names_values, country_labels))
+type_dict = dict(zip(df['Type-document'].unique(),range(len(df['Type-document'].unique()))))
+language_dict = dict(zip(df['Langue'].unique(),range(len(df['Langue'].unique()))))
+
+### Save output to file
+dump(author_dict, author_dictionary_file)
+dump(publisher_dict, publisher_dictionary_file)
+dump(country_dict, country_dictionary_file)
+dump(type_dict, type_dictionary_file)
+dump(language_dict, language_dictionary_file)

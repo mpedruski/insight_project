@@ -25,8 +25,7 @@ np.random.seed(31415)
 # test_folder = Path("../data/test")
 processed_folder = Path("../data/processed")
 file_to_open = processed_folder / 'cluster_labels_for_each_title.csv'
-model_parameters = processed_folder / 'SGD_model_parameters.joblib'
-encoding_parameters = processed_folder / 'OHE_parameters.joblib'
+model_parameters = processed_folder / 'decision_tree_parameters.joblib'
 
 df = pd.read_csv(file_to_open)
 
@@ -82,7 +81,24 @@ for i in range(len(conf_mat)):
         s.append(conf_mat[i,i]+conf_mat[i, i-1])
     else:
         s.append(conf_mat[i,i]+conf_mat[i,i-1]+conf_mat[i,i+1])
-print(s)
+logging.debug('How many predictions are in neighbourhood: {}'.format(s))
 total_sum = sum(sum(conf_mat))
-print(sum(s)/total_sum)
-print(np.unique(y_test))
+logging.debug('Accuracy of predctions in the neighbourhood: {}'.format(sum(s)/total_sum))
+logging.debug('Number of actual 0 cases by value {}'.format(sum(conf_mat[0,:])))
+logging.debug('Number of predicted 0 cases by value {}'.format(sum(conf_mat[:,0])))
+ind_sums = np.sum(conf_mat,axis=1)
+logging.debug('Number of prediced cases predicted to be x {}'.format(ind_sums))
+
+print(regr_1.classes_)
+print(regr_1.feature_importances_)
+
+### Confirm that the model is doing better than random
+random_prob_test_array = []
+for i in y_test:
+    random_prob_test_array.append(np.random.choice(y_test))
+random_prob_test_array = np.array(random_prob_test_array)
+count = len(np.where(random_prob_test_array==y_test)[0])
+logging.debug('Accuracy if the model was predicting at random based on available ratios: {}'.format(count/total_sum))
+# logging.debug('Random accuracy: {}'.format()
+
+# dump(regr_1, model_parameters)
