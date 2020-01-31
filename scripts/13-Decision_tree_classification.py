@@ -1,9 +1,5 @@
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import SGDRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import plot_tree
 from sklearn.metrics import confusion_matrix
@@ -23,7 +19,6 @@ np.random.seed(31415)
 ### Regression based on historical data
 
 ### Determine paths to datasets and load into pandas dataframe
-# test_folder = Path("../data/test")
 processed_folder = Path("../data/processed")
 file_to_open = processed_folder / 'cluster_labels_for_each_title.csv'
 coded_variables_file = processed_folder / 'coded_variables.joblib'
@@ -36,8 +31,6 @@ var = load(coded_variables_file)
 df['Auteur_values'] = var[0]
 df['Editeur_values'] = var[1]
 df['Pays_values'] = var[2]
-
-print(df.columns)
 
 ### Find length of majority and minority class data
 minority_class_len = len(df[df['Demand']==2])
@@ -57,31 +50,12 @@ under_sample_indices = np.concatenate([minority_class_indices,random_majority_1_
     random_majority_2_indices])
 df = df.loc[under_sample_indices]
 
-# ### Find length of majority and minority class data
-# minority_class_len = len(df[df['Demand']==1])
-# majority_class_indices = df[df['Demand']==0].index
-#
-# ### Generate a list of majority class indices to retain, based on how many minority
-# ### class data their are
-# random_majority_indices = np.random.choice(majority_class_indices, minority_class_len,
-#     replace = False)
-# ### Make list of minority class indices and combine with majority class indices
-# ### then define dataset as the rows of the dataset from those indices
-# minority_class_indices = df[df['Demand']>0].index
-# under_sample_indices = np.concatenate([minority_class_indices,random_majority_indices])
-# df = df.loc[under_sample_indices]
-
-
 ### Select variable to predict as well as features to be used
 y = df['Demand']
-# x = df[['Auteur_values','Editeur_values','Pays_values','Document_type_labels',
-#     'Years_offset','Nombre_pages','Language_type_labels']]
 x = df[['Auteur_values','Editeur_values','Pays_values','Document_type_labels',
     'Years_offset','Language_type_labels']]
 ### Split dataset into training and testing components
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
-
-# logging.debug('Numeric features {}'.format(onehotlabels_train))
 
 ## Classify features on variable to predict, and test against
 ### test set
@@ -106,16 +80,11 @@ for i in range(len(conf_mat)):
         s.append(conf_mat[i,i]+conf_mat[i, i-1])
     else:
         s.append(conf_mat[i,i]+conf_mat[i,i-1]+conf_mat[i,i+1])
-logging.debug('How many predictions are in neighbourhood: {}'.format(s))
 total_sum = sum(sum(conf_mat))
 logging.debug('Accuracy of predctions in the neighbourhood: {}'.format(sum(s)/total_sum))
-logging.debug('Number of actual 0 cases by value {}'.format(sum(conf_mat[0,:])))
-logging.debug('Number of predicted 0 cases by value {}'.format(sum(conf_mat[:,0])))
-ind_sums = np.sum(conf_mat,axis=1)
-logging.debug('Number of prediced cases predicted to be x {}'.format(ind_sums))
 
-print(regr_1.classes_)
-print(regr_1.feature_importances_)
+logging.debug('List of possible classes: {}'.format(regr_1.classes_))
+logging.debug('Feature importance for forest model: {}'.format(regr_1.feature_importances_))
 
 ### Confirm that the model is doing better than random
 random_prob_test_array = []
@@ -138,11 +107,6 @@ for i in range(random_prob_test_array.shape[0]):
 
 logging.debug('Accuracy if the model was predicting at random (expanded ): {}'.format(len(expanded_count)/total_sum))
 
-# logging.debug('Random accuracy: {}'.format()
-
-print(regr_1.predict(np.array([23401,680251,2378036,1,1,0]).reshape(1,-1)))
-print(regr_1.predict(np.array([23401,680251,2378036,1,3,0]).reshape(1,-1)))
-print(regr_1.predict(np.array([23401,680251,2378036,1,10,0]).reshape(1,-1)))
-print(regr_1.predict(np.array([0,0,0,1,1,0]).reshape(1,-1)))
+### Save output of model
 
 dump(regr_1, model_parameters)
