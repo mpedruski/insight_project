@@ -11,9 +11,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def predict_title(author, publisher, country, doc_type, year_offset, page_count, language):
+def predict_title(author, publisher, country, doc_type, year_offset, language):
     title_data = np.array([author_labels.get(author,0), publisher_labels.get(publisher,0),
-        country_labels[country],type_labels[doc_type], year_offset, page_count,
+        country_labels[country],type_labels[doc_type], year_offset,
         language_labels[language]]).astype(int)
     prediction = regr_1.predict(title_data.reshape(1,-1))
     return prediction
@@ -83,12 +83,11 @@ def recommendation_output():
        author_input = request.args.get('author')
        publisher_input_initial = request.args.get('publisher')
        country_input = request.args.get('country')
-       page_count_input = request.args.get('page_count')
        language_input = request.args.get('language')
        document_type_input = request.args.get('type_info')
 
        inputs = [title_input,author_input,publisher_input_initial,country_input
-        ,page_count_input,language_input,document_type_input]
+        ,language_input,document_type_input]
 
        ### Reformat publisher following rules in data cleaning
        publisher_input = publisher_formatting_singleton(publisher_input_initial)
@@ -101,22 +100,18 @@ def recommendation_output():
                                   my_input = "",
                                   my_form_result="Empty")
        else:
-           output_values = np.array([['Predicted demand after 1 year is:',predict_title(author_input,publisher_input,country_input,
-               document_type_input,1,int(page_count_input),language_input)[0]],['Predicted demand after 3 years is:',predict_title(author_input,publisher_input,country_input,
-                   document_type_input,3,int(page_count_input),language_input)[0]],['Predicted demand after 10 years is:',predict_title(author_input,publisher_input,country_input,
-                       document_type_input,10,int(page_count_input),language_input)[0]]])
-           df = pd.DataFrame(output_values)
-           df.columns = ['Text','Values']
+           # df = pd.DataFrame(output_values)
+           # df.columns = ['Text','Values']
 
            yr1_output = "Predicted demand for {} after 1 year is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
-                document_type_input,1,int(page_count_input),language_input)[0])
+                document_type_input,1,language_input)[0])
            yr3_output = "Predicted demand for {} after 3 years is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
-                document_type_input,3,int(page_count_input),language_input)[0])
+                document_type_input,3,language_input)[0])
            yr10_output = "Predicted demand for {} after 10 years is {} copies:".format(title_input,
            predict_title(author_input,publisher_input,country_input,
-               document_type_input,10,int(page_count_input),language_input)[0])
+               document_type_input,10,language_input)[0])
            return render_template("index.html",
                               # my_input="Results for: Author: {}, Publisher: {},Country: {}, Document type: {}, Page count: {} and language: {}".format(author_input, publisher_input,country_input,document_type_input
                                 # ,page_count_input,language_input),

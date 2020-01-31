@@ -7,6 +7,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import plot_tree
 from sklearn.metrics import confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
 
 from joblib import dump, load
 import numpy as np
@@ -56,11 +57,27 @@ under_sample_indices = np.concatenate([minority_class_indices,random_majority_1_
     random_majority_2_indices])
 df = df.loc[under_sample_indices]
 
+# ### Find length of majority and minority class data
+# minority_class_len = len(df[df['Demand']==1])
+# majority_class_indices = df[df['Demand']==0].index
+#
+# ### Generate a list of majority class indices to retain, based on how many minority
+# ### class data their are
+# random_majority_indices = np.random.choice(majority_class_indices, minority_class_len,
+#     replace = False)
+# ### Make list of minority class indices and combine with majority class indices
+# ### then define dataset as the rows of the dataset from those indices
+# minority_class_indices = df[df['Demand']>0].index
+# under_sample_indices = np.concatenate([minority_class_indices,random_majority_indices])
+# df = df.loc[under_sample_indices]
+
 
 ### Select variable to predict as well as features to be used
 y = df['Demand']
+# x = df[['Auteur_values','Editeur_values','Pays_values','Document_type_labels',
+#     'Years_offset','Nombre_pages','Language_type_labels']]
 x = df[['Auteur_values','Editeur_values','Pays_values','Document_type_labels',
-    'Years_offset','Nombre_pages','Language_type_labels']]
+    'Years_offset','Language_type_labels']]
 ### Split dataset into training and testing components
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
 
@@ -68,7 +85,7 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_
 
 ## Classify features on variable to predict, and test against
 ### test set
-regr_1 = DecisionTreeClassifier(max_depth=16, min_samples_leaf=8)
+regr_1 = RandomForestClassifier(max_depth=16, min_samples_leaf=8, bootstrap = False)
 regr_1_model = regr_1.fit(x_train, y_train)
 y_pred = regr_1.predict(x_test)
 
@@ -107,11 +124,25 @@ for i in y_test:
 random_prob_test_array = np.array(random_prob_test_array)
 count = len(np.where(random_prob_test_array==y_test)[0])
 logging.debug('Accuracy if the model was predicting at random based on available ratios: {}'.format(count/total_sum))
+expanded_count = []
+true_vals = np.array(y_test)
+print(true_vals)
+for i in range(random_prob_test_array.shape[0]):
+    # print(i)
+    if true_vals[i] == random_prob_test_array[i]:
+        expanded_count.append(random_prob_test_array[i])
+    elif true_vals[i] == random_prob_test_array[i] + 1:
+        expanded_count.append(random_prob_test_array[i])
+    elif true_vals[i] == random_prob_test_array[i] + -1:
+        expanded_count.append(random_prob_test_array[i])
+
+logging.debug('Accuracy if the model was predicting at random (expanded ): {}'.format(len(expanded_count)/total_sum))
+
 # logging.debug('Random accuracy: {}'.format()
 
-# print(regr_1.predict(np.array([23401,680251,2378036,1,1,223,0]).reshape(1,-1)))
-# print(regr_1.predict(np.array([23401,680251,2378036,1,3,223,0]).reshape(1,-1)))
-# print(regr_1.predict(np.array([23401,680251,2378036,1,10,223,0]).reshape(1,-1)))
-# print(regr_1.predict(np.array([0,0,0,1,1,223,0]).reshape(1,-1)))
+print(regr_1.predict(np.array([23401,680251,2378036,1,1,0]).reshape(1,-1)))
+print(regr_1.predict(np.array([23401,680251,2378036,1,3,0]).reshape(1,-1)))
+print(regr_1.predict(np.array([23401,680251,2378036,1,10,0]).reshape(1,-1)))
+print(regr_1.predict(np.array([0,0,0,1,1,0]).reshape(1,-1)))
 
-# dump(regr_1, model_parameters)
+dump(regr_1, model_parameters)
