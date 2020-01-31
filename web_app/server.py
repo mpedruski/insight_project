@@ -16,7 +16,6 @@ def predict_title(author, publisher, country, doc_type, year_offset, page_count,
         country_labels[country],type_labels[doc_type], year_offset, page_count,
         language_labels[language]]).astype(int)
     prediction = regr_1.predict(title_data.reshape(1,-1))
-    print(title_data)
     return prediction
 
 def publisher_formatting_singleton(publisher_name):
@@ -102,6 +101,13 @@ def recommendation_output():
                                   my_input = "",
                                   my_form_result="Empty")
        else:
+           output_values = np.array([['Predicted demand after 1 year is:',predict_title(author_input,publisher_input,country_input,
+               document_type_input,1,int(page_count_input),language_input)[0]],['Predicted demand after 3 years is:',predict_title(author_input,publisher_input,country_input,
+                   document_type_input,3,int(page_count_input),language_input)[0]],['Predicted demand after 10 years is:',predict_title(author_input,publisher_input,country_input,
+                       document_type_input,10,int(page_count_input),language_input)[0]]])
+           df = pd.DataFrame(output_values)
+           df.columns = ['Text','Values']
+
            yr1_output = "Predicted demand for {} after 1 year is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
                 document_type_input,1,int(page_count_input),language_input)[0])
@@ -118,6 +124,7 @@ def recommendation_output():
                               output_1=yr1_output,
                               output_2=yr3_output,
                               output_3=yr10_output,
+                              tables=[df.to_html(classes='table', header="true")],
                               my_form_result="NotEmpty")
 
 

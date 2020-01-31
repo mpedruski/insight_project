@@ -92,7 +92,6 @@
                   <p>{{output_1}}</p>
                   <p>{{output_2}}</p>
                   <p>{{output_3}}</p>
-
               </h4>
               </ul>
         </div>
@@ -100,6 +99,9 @@
 
   {% else %}
   {% endif %}
+  {% for table in tables%}
+    {{table|safe}}
+  {%endfor%}
   </div>
 </section>
 
