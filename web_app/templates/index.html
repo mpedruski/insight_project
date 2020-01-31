@@ -6,29 +6,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <!-- Latest compiled and minified CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
-
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <title>Demand predictor</title>
 
 </head>
 
-<body id="page-top">
-
+<body class="" id="page-top">
+<div class="text-center">
+ <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+</div>
  <!-- Takes in input and yields output -->
-<section class="bg-primary mb-0" id="try">
+<section class="" id="try">
   <div class="container">
-    <h2 class="text-center">Title demand predictor</h2>
-          <div class="col-sm m-3 text-center">
+    <h1 class="text-center">Why Not Buy 2?</h1>
+    <h4 class="text-center">A title demand predictor for books</h4>
+          <div class="text-center">
                 <form action="/output" method="GET" id="user_input">
-                      <label for = "title">Book title :</label>
+                      <label for = "title" class = "h5">Book title :</label>
                       <input class="form-control" type="text" id="user_input" name='title' placeholder="e.g. Harry Potter and the Philosopher's Stone">
-                      <label for = "author">Author name :</label>
+                      <label for = "author" class = "h5">Author name :</label>
                       <input class="form-control" type="text" id="user_input" name='author' placeholder="e.g. Proust, Marcel">
-                      <label for = "publisher">Publisher name :</label>
+                      <label for = "publisher" class ="h5">Publisher name :</label>
                       <input class="form-control" type="text" id="user_input" name='publisher' placeholder="e.g. Gallimard,">
-                      <label for = "page_count">Number of pages:</label>
+                      <label for = "page_count" class = "h5">Number of pages:</label>
                       <input class="form-control" type="text" id="user_input" name='page_count' placeholder="e.g. 354">
-                      <label>Document-type</label>
+                      <label class='h5'>Document-type</label>
                       <select id = "user_input" name = 'type_info'>
                         <option value = "LV_Fiction J">Fiction for children</option>
                         <option value = 'LV_Documentaire J'>Non-fiction for children</option>
@@ -40,8 +42,8 @@
                         <option value = "LV_Gros caractères A">Large font for adults</option>
                         <option value = "LV_Braille">Braille</option>
                       </select>
-                      <label>Language</label>
-                      <select class="mdb-select md-form colorful-select dropdown-danger" id = "user_input" name = 'language'>
+                      <label class='h5'>Language</label>
+                      <select class="" id = "user_input" name = 'language'>
                         <option value = "fre">Français</option>
                         <option value = "eng">English</option>
                         <option value = "rus">Russian</option>
@@ -56,8 +58,8 @@
                         <option value = "gre">Greek</option>
                         <option value = "tur">Turkish</option>
                       </select>
-                    <label>Country of publication</label>
-                    <select class="mdb-select md-form colorful-select dropdown-danger" id = "user_input" name = 'country'>
+                    <label class='h5'>Country of publication</label>
+                    <select class="" id = "user_input" name = 'country'>
                       <option value = "quc">Québec</option>
                       <option value = "be">Belgium</option>
                       <option value = "xxc">Canada</option>
@@ -75,33 +77,29 @@
   </div>
 
   {% if my_form_result=='Empty' %}
-  <div class="row mt-4 justify-content-center">
+  <div class="justify-content-center">
         <h4 class="text-danger text-center text-uppercase">At least one field is missing input.</h4>
   </div>
 
   {% elif my_form_result=='NotEmpty' %}
 
-  <div class="row mt-4 justify-content-center">
+  <div class="justify-content-center">
         <h4 class="text-light text-center text-uppercase">Results:</h4>
   </div>
-  <div class="row p-1 m-1 justify-content-center">
-        <div class="col-md- w-50 list-group">
-               <ul class="list-group">
-               <h4 class="text-center">
+  <div class="">
+        <div>
                   <p>{{my_input}}</p>
-                  <p>{{output_1}}</p>
-                  <p>{{output_2}}</p>
-                  <p>{{output_3}}</p>
-              </h4>
-              </ul>
+                  <p class = "h5">{{output_1}}</p>
+                  <p class = "h5">{{output_2}}</p>
+                  <p class = "h5">{{output_3}}</p>
         </div>
   </div>
 
   {% else %}
   {% endif %}
-  {% for table in tables%}
+  <!-- {% for table in tables%}
     {{table|safe}}
-  {%endfor%}
+  {%endfor%} -->
   </div>
 </section>
 

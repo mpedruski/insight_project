@@ -118,13 +118,13 @@ def recommendation_output():
            predict_title(author_input,publisher_input,country_input,
                document_type_input,10,int(page_count_input),language_input)[0])
            return render_template("index.html",
-                              my_input="Results for: Author: {}, Publisher: {},Country: {}, Document type: {}, Page count: {} and language: {}".format(author_input, publisher_input,country_input,document_type_input
-                                ,page_count_input,language_input),
+                              # my_input="Results for: Author: {}, Publisher: {},Country: {}, Document type: {}, Page count: {} and language: {}".format(author_input, publisher_input,country_input,document_type_input
+                                # ,page_count_input,language_input),
                               title_output = title_input,
                               output_1=yr1_output,
                               output_2=yr3_output,
                               output_3=yr10_output,
-                              tables=[df.to_html(classes='table', header="true")],
+                              # tables=[df.to_html(classes='table table-striped table-light', header="true")],
                               my_form_result="NotEmpty")
 
 
