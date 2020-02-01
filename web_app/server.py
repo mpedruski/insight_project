@@ -12,9 +12,9 @@ logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(
 
 
 def predict_title(author, publisher, country, doc_type, year_offset, language):
-    title_data = np.array([author_labels.get(author,0), publisher_labels.get(publisher,0),
-        country_labels[country],type_labels[doc_type], year_offset,
-        language_labels[language]]).astype(int)
+    title_data = np.array([dictionaries[0].get(author,0), dictionaries[1].get(publisher,0),
+        dictionaries[2][country],dictionaries[3][doc_type], year_offset,
+        dictionaries[4][language]]).astype(int)
     prediction = regr_1.predict(title_data.reshape(1,-1))
     return prediction
 
@@ -47,21 +47,11 @@ def publisher_formatting_singleton(publisher_name):
 # test_folder = Path("../data/test")
 processed_folder = Path("../data/processed/")
 test_folder = Path("../data/test/")
-author_dictionary = processed_folder / 'author_dictionary.joblib'
-publisher_dictionary = processed_folder / 'publisher_dictionary.joblib'
-country_dictionary = processed_folder / 'country_dictionary.joblib'
-type_dictionary = processed_folder / 'type_dictionary_categories.joblib'
-language_dictionary = processed_folder / 'language_dictionary_categories.joblib'
-# coded_variables_file = processed_folder / 'coded_variables.joblib'
-
+dictionaries_file = processed_folder / 'variable_dictionaries.joblib'
 model_data = processed_folder / 'decision_tree_parameters.joblib'
 
 ### Load in label data to categorize new title:
-author_labels = load(author_dictionary)
-publisher_labels = load(publisher_dictionary)
-country_labels = load(country_dictionary)
-type_labels = load(type_dictionary)
-language_labels = load(language_dictionary)
+dictionaries = load(dictionaries_file)
 ### Load saved model
 regr_1 = load(model_data)
 
@@ -100,26 +90,20 @@ def recommendation_output():
                                   my_input = "",
                                   my_form_result="Empty")
        else:
-           # df = pd.DataFrame(output_values)
-           # df.columns = ['Text','Values']
-
            yr1_output = "Predicted demand for {} after 1 year is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
-                document_type_input,1,language_input)[0])
+            document_type_input,1,language_input)[0])
            yr3_output = "Predicted demand for {} after 3 years is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
-                document_type_input,3,language_input)[0])
+            document_type_input,3,language_input)[0])
            yr10_output = "Predicted demand for {} after 10 years is {} copies:".format(title_input,
            predict_title(author_input,publisher_input,country_input,
                document_type_input,10,language_input)[0])
            return render_template("index.html",
-                              # my_input="Results for: Author: {}, Publisher: {},Country: {}, Document type: {}, Page count: {} and language: {}".format(author_input, publisher_input,country_input,document_type_input
-                                # ,page_count_input,language_input),
                               title_output = title_input,
                               output_1=yr1_output,
                               output_2=yr3_output,
                               output_3=yr10_output,
-                              # tables=[df.to_html(classes='table table-striped table-light', header="true")],
                               my_form_result="NotEmpty")
 
 
