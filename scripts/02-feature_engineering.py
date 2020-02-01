@@ -78,7 +78,7 @@ processed_folder = Path("../data/processed")
 file_to_open = data_folder / 'by_titles.csv'
 files_to_write=['cluster_labels_for_each_title.csv', 'variable_dictionaries.joblib']
 
-df = pd.read_csv(file_to_open,nrows=100000)
+df = pd.read_csv(file_to_open,nrows=None)
 logging.critical('Beginning analysis')
 
 ### Process author, publisher, and country data
