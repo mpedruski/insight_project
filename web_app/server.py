@@ -1,6 +1,4 @@
-from flask import Flask, render_template, request
-from sklearn.linear_model import SGDRegressor
-from sklearn.preprocessing import OneHotEncoder
+from flask import Flask, render_template, request, Markup
 from joblib import load
 import numpy as np
 import pandas as pd
@@ -13,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(levelname)s - %(
 
 def predict_title(author, publisher, country, doc_type, year_offset, language):
     title_data = np.array([dictionaries[0].get(author,0), dictionaries[1].get(publisher,0),
-        dictionaries[2][country],dictionaries[3][doc_type], year_offset,
+        dictionaries[2].get(country,0),dictionaries[3][doc_type], year_offset,
         dictionaries[4][language]]).astype(int)
     prediction = regr_1.predict(title_data.reshape(1,-1))
     return prediction
@@ -90,15 +88,15 @@ def recommendation_output():
                                   my_input = "",
                                   my_form_result="Empty")
        else:
-           yr1_output = "Predicted demand for {} after 1 year is {} copies:".format(title_input,
+           yr1_output = Markup("Predicted demand for <i>{}</i> after 1 year is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
-            document_type_input,1,language_input)[0])
-           yr3_output = "Predicted demand for {} after 3 years is {} copies:".format(title_input,
+            document_type_input,1,language_input)[0]))
+           yr3_output = Markup("Predicted demand for <i>{}</i> after 3 years is {} copies:".format(title_input,
             predict_title(author_input,publisher_input,country_input,
-            document_type_input,3,language_input)[0])
-           yr10_output = "Predicted demand for {} after 10 years is {} copies:".format(title_input,
+            document_type_input,3,language_input)[0]))
+           yr10_output = Markup("Predicted demand for <i>{}</i> after 10 years is {} copies:".format(title_input,
            predict_title(author_input,publisher_input,country_input,
-               document_type_input,10,language_input)[0])
+               document_type_input,10,language_input)[0]))
            return render_template("index.html",
                               title_output = title_input,
                               output_1=yr1_output,

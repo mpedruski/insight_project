@@ -76,7 +76,7 @@ def limited_categorical_variable_numericizer(variables):
 data_folder = Path("../data/cleaned")
 processed_folder = Path("../data/processed")
 file_to_open = data_folder / 'by_titles.csv'
-files_to_write=['cluster_labels_for_each_title.csv', 'variable_dictionaries.joblib']
+files_to_write=['feature_labels_for_each_title.csv', 'variable_dictionaries.joblib']
 
 df = pd.read_csv(file_to_open,nrows=None)
 logging.critical('Beginning analysis')
@@ -99,10 +99,10 @@ year_column = year_offset(2020)
 logging.critical('Saving output')
 ### Export data set for each title
 results = [titles_label_values[0],titles_label_values[1],titles_label_values[2],
-    year_column,numerical_categories[0],numerical_categories[1],df['Nombre-pages'],df['Demanded']]
+    year_column,numerical_categories[0],numerical_categories[1],df['Demanded']]
 df1 = pd.DataFrame(results).transpose()
 df1.columns = ["Auteur_labels","Editeur_labels","Pays_labels","Years_offset",
-    "Document_type_labels","Language_type_labels","Nombre_pages","Demand"]
+    "Document_type_labels","Language_type_labels","Demand"]
 df1.to_csv(processed_folder / files_to_write[0])
 
 ### Save dictionaries to file for easy import into server
