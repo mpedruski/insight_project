@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <!-- Latest compiled and minified CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-  <title>Demand predictor</title>
+  <title>Why not buy 2?</title>
 
 </head>
 
@@ -23,11 +23,11 @@
           <div class="text-center">
                 <form action="/output" method="GET" id="user_input">
                       <label for = "title" class = "h5">Book title :</label>
-                      <input class="form-control" type="text" id="user_input" name='title' placeholder="e.g. Harry Potter and the Philosopher's Stone">
+                      <input class="form-control" type="text" id="user_input" name='title' placeholder="e.g. Demain matin Montréal m'attend">
                       <label for = "author" class = "h5">Author name :</label>
-                      <input class="form-control" type="text" id="user_input" name='author' placeholder="e.g. Proust, Marcel">
+                      <input class="form-control" type="text" id="user_input" name='author' placeholder="e.g. Hébert, Anne OR e.g. Rowling, J K">
                       <label for = "publisher" class ="h5">Publisher name :</label>
-                      <input class="form-control" type="text" id="user_input" name='publisher' placeholder="e.g. Gallimard">
+                      <input class="form-control" type="text" id="user_input" name='publisher' placeholder="e.g. Héliotrope">
                       <label class='h5'>Document-type</label>
                       <select id = "user_input" name = 'type_info'>
                         <option value = "LV_Fiction J">Fiction for children</option>
@@ -89,7 +89,6 @@
                   <p>{{my_input}}</p>
                   <p class = "h5">{{output_1}}</p>
                   <p class = "h5">{{output_2}}</p>
-                  <p class = "h5">{{output_3}}</p>
         </div>
   </div>
 

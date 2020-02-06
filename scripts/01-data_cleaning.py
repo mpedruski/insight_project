@@ -80,7 +80,7 @@ def author_formatting(uncleaned_list):
             if pattern_output is None:
                 cleaned_list.append(None)
             else:
-                cleaned_list.append(pattern_output.group())
+                cleaned_list.append(pattern_output.group().replace(".",""))
         else:
             cleaned_list.append(None)
     logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
@@ -129,65 +129,61 @@ def publisher_formatting(uncleaned_list):
     logging.debug('Length of list post formatting = {}'.format(len(cleaned_list)))
     return cleaned_list
 
-print(datetime.datetime.now())
-### Determine paths to datasets
-data_folder = Path("../data/raw")
-# test_folder = Path("../data/test")
-output_folder = Path("../data/cleaned")
+if __name__ == "__main__":
 
-file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
-file_to_write = output_folder / 'by_titles.csv'
-# test_file = test_folder / 'biblioMTL_small_test.csv'
-# test_file = test_folder / 'biblioMTL_big_test.csv'
+    print(datetime.datetime.now())
+    data_folder = Path("../data/raw")
+    output_folder = Path("../data/cleaned")
+    file_to_open = data_folder / 'biblioMTL_cat_2020_01_09.csv'
+    file_to_write = output_folder / 'by_titles.csv'
 
-nrows = None
+    nrows = None
 
-### Determine which rows of dataset refer to books
-exclude = determine_exclude(file_to_open,nrows)
+    ### Determine which rows of dataset refer to books
+    exclude = determine_exclude(file_to_open,nrows)
 
-### Clean and collate variables of interest on a per-ISBN basis
-df = pd.read_csv(file_to_open, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,19],
-    skiprows=exclude,nrows=nrows)
-### Numericize ISBNs to make for faster handling and to prevent duplicates
-### and to feed to other variables for their grouping
-df['ISN'] = text_remove_from_numeric_data(df['ISN'])
-### Isolate set of unique ISBNs
-isns = df['ISN'].unique()
-### Convert availability of items to numeric values
-df['Statut-document'] = numericize_availability(isns)
-### Count availability, lifetime borrows, and total copie availability by ISBN
-available_count = df.groupby('ISN')['Statut-document'].sum()
-lifetime_count = df.groupby('ISN')['Nombre-prets-vie'].sum()
-total_count = df.groupby('ISN')['ISN'].count()
-### Clean year and page data by removing text
-df['Annee'] = text_remove_from_numeric_data(df['Annee'])
-df['Nombre-pages'] = text_remove_from_numeric_data(df['Nombre-pages'])
-### Clean author data by removiing unnecessary formatting
-df['Auteur'] = author_formatting(df['Auteur'])
-logging.debug('Number of unique authors: {}'.format(len(df['Auteur'].unique())))
-df['Lieu'] = location_formatting(df['Lieu'])
-logging.debug('Number of unique locations: {}'.format(len(df['Lieu'].unique())))
-df['Editeur'] = publisher_formatting(df['Editeur'])
-logging.debug('Number of unique publishers: {}'.format(len(df['Editeur'].unique())))
+    ### Clean and collate variables of interest on a per-ISBN basis
+    df = pd.read_csv(file_to_open, header=0, usecols=[3,5,6,8,10,12,13,14,15,16,17,19],
+        skiprows=exclude,nrows=nrows)
 
-### Caculated demand for ISBNs by subtracting number available from total number
-demand_count = []
-for i in range(len(available_count)):
-    demand_count.append(total_count[i]-available_count[i])
+    ### Numericize ISBNs to make for faster handling and to prevent duplicates
+    ### and to feed to other variables for their grouping
+    df['ISN'] = text_remove_from_numeric_data(df['ISN'])
+    isns = df['ISN'].unique()
+    ### Convert availability of items to numeric values
+    df['Statut-document'] = numericize_availability(isns)
 
-### Find the first entry for each ISBN for each of the traits in columns to build
-logging.debug('Inputting uniform text for all items that share a ISBN')
-columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document','Lieu']
-results = [aquire_trait(i) for i in columns_to_build]
+    ### Count availability, lifetime borrows, and total copie availability by ISBN
+    available_count = df.groupby('ISN')['Statut-document'].sum()
+    lifetime_count = df.groupby('ISN')['Nombre-prets-vie'].sum()
+    total_count = df.groupby('ISN')['ISN'].count()
 
-### Join datasets, remove rows for which data is missing, and export to csv
-df1 = pd.DataFrame(results)
-logging.debug('Beginning transpose')
-df1 = df1.transpose()
-logging.debug('Done transpose')
-df1.columns = columns_to_build
-df2 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'Lifetime':lifetime_count})
-df1 = df1.join(df2)
-df1 = df1.dropna()
-df1.to_csv(file_to_write)
-print(datetime.datetime.now())
+    ### Clean year and page data by removing text
+    df['Annee'] = text_remove_from_numeric_data(df['Annee'])
+    df['Nombre-pages'] = text_remove_from_numeric_data(df['Nombre-pages'])
+
+    ### Clean author, place, and publisher data by removing unnecessary formatting
+    df['Auteur'] = author_formatting(df['Auteur'])
+    df['Lieu'] = location_formatting(df['Lieu'])
+    df['Editeur'] = publisher_formatting(df['Editeur'])
+
+    ### Caculated demand for ISBNs by subtracting number available from total number
+    demand_count = []
+    for i in range(len(available_count)):
+        demand_count.append(total_count[i]-available_count[i])
+
+    logging.debug('Inputting uniform text for all items that share a ISBN')
+    columns_to_build = ['Titre','Auteur','Editeur','Pays','Annee','Nombre-pages','Langue','Type-document','Lieu']
+    results = [aquire_trait(i) for i in columns_to_build]
+
+    ### Join datasets, remove rows for which data is missing, and export to csv
+    df1 = pd.DataFrame(results)
+    logging.debug('Beginning transpose')
+    df1 = df1.transpose()
+    logging.debug('Done transpose')
+    df1.columns = columns_to_build
+    df2 = pd.DataFrame({'Total':total_count,'Available':available_count,'Demanded':demand_count,'Lifetime':lifetime_count})
+    df1 = df1.join(df2)
+    df1 = df1.dropna()
+    df1.to_csv(file_to_write)
+    print(datetime.datetime.now())
