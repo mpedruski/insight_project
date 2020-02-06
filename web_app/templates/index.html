@@ -76,7 +76,7 @@
 
   {% if my_form_result=='Empty' %}
   <div class="justify-content-center">
-        <h4 class="text-danger text-center text-uppercase">At least one field is missing input.</h4>
+        <h4 class="text-danger text-center">At least one field is currently missing input. Please make sure you've filled in the title, author, and publisher fields.</h4>
   </div>
 
   {% elif my_form_result=='NotEmpty' %}
@@ -87,8 +87,11 @@
   <div class="">
         <div>
                   <p>{{my_input}}</p>
+                  <p class = "h5">{{output_0}}</p>
                   <p class = "h5">{{output_1}}</p>
                   <p class = "h5">{{output_2}}</p>
+                  <p class = "h5 text-danger">{{output_3}}</p>
+
         </div>
   </div>
 

@@ -1,25 +1,28 @@
 from flask import Flask, render_template, request, Markup
 from joblib import load
 import numpy as np
-import pandas as pd
 import re
 from pathlib import Path
-import datetime
 import logging
 logging.basicConfig(level=logging.CRITICAL,format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def predict_title(author, publisher, country, doc_type, year_offset, language):
-    ''' [str, str, str, str, int, str] -> int
+def predict_title(author, publisher, country, doc_type, years, language, title):
+    ''' [str, str, str, str, [int], str] -> int
     Accepts an author key, a publisher key, a country key, a document-type key,
-    a year from the present, and a language key, finds the corresponding value
+    a list of years from the present, and a language key, finds the corresponding value
     to each key (as well as the year from the present as an int) and passes
     these to the loaded regression model to return predicted output'''
-    title_data = np.array([dictionaries[0].get(author,0), dictionaries[1].get(publisher,0),
-        dictionaries[2].get(country,0),dictionaries[3][doc_type], year_offset,
-        dictionaries[4][language]]).astype(int)
-    prediction = regr_1.predict(title_data.reshape(1,-1)).astype(int)
-    return prediction
+    outputs = []
+    for i in range(len(years)):
+        prediction = regr_1.predict(np.array([dictionaries[0].get(author,0),
+            dictionaries[1].get(publisher,0),dictionaries[2].get(country,0),
+            dictionaries[3][doc_type], years[i],dictionaries[4][language]]).reshape(1,-1))[0].astype(int)
+        if prediction == 1:
+            outputs.append(Markup("Predicted demand for <i>{}</i> {} years after publication is <b>1 copy<b>.".format(title,years[i])))
+        else:
+            outputs.append(Markup("Predicted demand for <i>{}</i> {} years after publication is <b>{}<b> copies.".format(title,years[i],prediction)))
+    return outputs
 
 def publisher_formatting_singleton(publisher_name):
     '''[str] -> [int]
@@ -44,6 +47,32 @@ def publisher_formatting_singleton(publisher_name):
     else:
         logging.debug("It's not a string")
         return None
+
+def author_publisher_warning(author, publisher):
+    if author not in dictionaries[0].keys():
+        author_warning = "Your author wasn't found in the catalogue, and 0 lifetime borrows have been attributed to them."
+    else:
+        author_warning = ""
+    if publisher not in dictionaries[1].keys():
+        publisher_warning = "Your publisher wasn't found in the catalogue, and 0 lifetime borrows have been attributed to them."
+    else:
+        publisher_warning = ""
+    if author not in dictionaries[0].keys() or publisher not in dictionaries[1].keys():
+        general_warning = "If this is unexpected, check that your entry format meets the expected format."
+    else:
+        general_warning = ""
+    warning_output = author_warning + " " + publisher_warning + " " + general_warning
+    return warning_output
+
+### Determine paths to datasets and load into pandas dataframe
+processed_folder = Path("../data/processed/")
+dictionaries_file = processed_folder / 'variable_dictionaries.joblib'
+model_data = processed_folder / 'decision_tree_parameters.joblib'
+
+### Load in label data to categorize new title:
+dictionaries = load(dictionaries_file)
+### Load saved model
+regr_1 = load(model_data)
 
 ### Create the application object
 app = Flask(__name__)
@@ -80,35 +109,18 @@ def recommendation_output():
             my_input = "",
             my_form_result="Empty")
     else:
-        yr1_pred = predict_title(author_input,publisher_input,country_input,
-        document_type_input,1,language_input)[0]
-        if yr1_pred == 1:
-            yr1_output = Markup("Books with the characteristics of <i>{}</i> are predicted to have a demand for 1 copy after one year.".format(title_input))
-        else:
-            yr1_output = Markup("Books with the characteristics of <i>{}</i> are predicted to have a demand for {} copies after one year.".format(title_input,yr1_pred))
-        yr3_pred = predict_title(author_input,publisher_input,country_input,
-        document_type_input,3,language_input)[0]
-        if yr3_pred == 1:
-            yr3_output = Markup("Books with the characteristics of <i>{}</i> are predicted to have a demand for 1 copy after three years.".format(title_input))
-        else:
-            yr3_output = Markup("Books with the characteristics of <i>{}</i> are predicted to have a demand for {} copies after three years.".format(title_input,yr3_pred))
+        outputs = predict_title(author_input,publisher_input,country_input,
+            document_type_input,[0,2,4],language_input,title_input)
+        warning_output = author_publisher_warning(author_input, publisher_input)
         return render_template("index.html",
             title_output = title_input,
-            output_1=yr1_output,
-            output_2=yr3_output,
+            output_0=outputs[0],
+            output_1=outputs[1],
+            output_2=outputs[2],
+            output_3=warning_output,
             my_form_result="NotEmpty")
 
 ### Start the server
 if __name__ == "__main__":
-
-    ### Determine paths to datasets and load into pandas dataframe
-    processed_folder = Path("../data/processed/")
-    dictionaries_file = processed_folder / 'variable_dictionaries.joblib'
-    model_data = processed_folder / 'decision_tree_parameters.joblib'
-
-    ### Load in label data to categorize new title:
-    dictionaries = load(dictionaries_file)
-    ### Load saved model
-    regr_1 = load(model_data)
 
     app.run(debug=True)
