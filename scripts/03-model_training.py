@@ -9,6 +9,7 @@ import pandas as pd
 from pathlib import Path
 import datetime
 import logging
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 def major_classes_undersampler(data, variable, class_to_match):
@@ -64,7 +65,8 @@ def model_accuracy(regr, x_test, y_test):
     ### (i.e. 4 as 3 or 5, which is an acceptable margin of error for my problem).
     print('Accuracy of predctions in the neighbourhood: {}'.format(sum(s)/total_sum))
     print('Feature importance for forest model: {}'.format(regr_1.feature_importances_))
-    conf_mat_reduced = []
+    sns.scatterplot(y_test,y_pred)
+    plt.savefig('../test_scatterplot.png')
 
 def random_accuracy(regr,y_test):
     '''(model, array, array) -> None

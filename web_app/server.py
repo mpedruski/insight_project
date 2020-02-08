@@ -15,13 +15,18 @@ def predict_title(author, publisher, country, doc_type, years, language, title):
     these to the loaded regression model to return predicted output'''
     outputs = []
     for i in range(len(years)):
-        prediction = regr_1.predict(np.array([dictionaries[0].get(author,0),
-            dictionaries[1].get(publisher,0),dictionaries[2].get(country,0),
-            dictionaries[3][doc_type], years[i],dictionaries[4][language]]).reshape(1,-1))[0].astype(int)
+        # prediction = round(rf_model.predict(np.array([0,
+        #     0, 996559, 0, 4218963, 3222549]).reshape(1,-1))[0]).astype(int)
+        # prediction = round(rf_model.predict(np.array([dictionaries[0].get('Pedruski, Michael',0),
+        #     dictionaries[1].get('Late Nite Press',0), dictionaries[2]['xxc'], 0,
+        #     dictionaries[3]['LV_Documentaire A'], dictionaries[4]['eng']]).reshape(1,-1))[0]).astype(int)
+        prediction = round(rf_model.predict(np.array([dictionaries[0].get(author,0),
+            dictionaries[1].get(publisher,0), dictionaries[2][country], 0,
+            dictionaries[3][doc_type], dictionaries[4][language]]).reshape(1,-1))[0]).astype(int)
         if prediction == 1:
-            outputs.append(Markup("Predicted demand for <i>{}</i> {} years after publication is <b>1 copy<b>.".format(title,years[i])))
+            outputs.append(Markup("Predicted demand for <i>{}</i> is <b>1 copy<b>.".format(title)))
         else:
-            outputs.append(Markup("Predicted demand for <i>{}</i> {} years after publication is <b>{}<b> copies.".format(title,years[i],prediction)))
+            outputs.append(Markup("Predicted demand for <i>{}</i> is <b>{}<b> copies.".format(title, prediction)))
     return outputs
 
 def publisher_formatting_singleton(publisher_name):
@@ -66,13 +71,13 @@ def author_publisher_warning(author, publisher):
 
 ### Determine paths to datasets and load into pandas dataframe
 processed_folder = Path("../data/processed/")
-dictionaries_file = processed_folder / 'variable_dictionaries.joblib'
-model_data = processed_folder / 'decision_tree_parameters.joblib'
+dictionaries_file = processed_folder / 'expanded_variable_dictionaries.joblib'
+model_data = processed_folder / 'expanded_regression_tree_parameters.joblib'
 
 ### Load in label data to categorize new title:
 dictionaries = load(dictionaries_file)
 ### Load saved model
-regr_1 = load(model_data)
+rf_model = load(model_data)
 
 ### Create the application object
 app = Flask(__name__)
@@ -110,13 +115,13 @@ def recommendation_output():
             my_form_result="Empty")
     else:
         outputs = predict_title(author_input,publisher_input,country_input,
-            document_type_input,[0,2,4],language_input,title_input)
+            document_type_input,[0],language_input,title_input)
         warning_output = author_publisher_warning(author_input, publisher_input)
         return render_template("index.html",
             title_output = title_input,
             output_0=outputs[0],
-            output_1=outputs[1],
-            output_2=outputs[2],
+            # output_1=outputs[1],
+            # output_2=outputs[2],
             output_3=warning_output,
             my_form_result="NotEmpty")
 
