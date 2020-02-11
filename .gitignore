@@ -1,0 +1,9 @@
+data/cleaned/
+data/deprecated/
+data/processed/
+data/raw/
+data/test/
+notebooks/figures/
+scripts/deprecated/
+web_app/static/
+notebooks/.ipynb_checkpoints/
