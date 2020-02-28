@@ -3,6 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
+from sklearn import linear_model
 from joblib import dump, load
 import numpy as np
 import pandas as pd
@@ -12,50 +13,76 @@ import logging
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-def major_classes_undersampler(data, variable, class_to_match):
-    '''(DataFrame, str, int) -> DataFrame
-    Accepts a dataframe as an argument, and a variable name that will be used
-    to reduce the size of the dataframe by undersampling majority class data'''
-    minority_class_len = len(data[data[variable]==class_to_match])
-    logging.debug("Demand classes: {}".format(data.groupby(variable)[variable].count()))
-    ### classes_to_undersample should be used with caution, it assumes that indices
-    ### map directly to demand categories, which is true for my data, but my not be for all
-    classes_to_undersample = np.where(data.groupby(variable)[variable].count()>minority_class_len)[0]
+def major_classes_undersampler(data, class_to_match):
+    '''(Pandas_series, str, int) -> DataFrame
+    Accepts a Pandas Series as an argument, and returns indices to undersamples the
+    dataframe so that no demand class is greater than the class_to_match'''
+    minority_class_len = len(data[data==class_to_match])
+    classes_to_undersample, classes_to_retain_intact = [],[]
+    for i in np.unique(data):
+        if len(data[data==i])> minority_class_len:
+            classes_to_undersample.append(i)
+        if len(data[data==i]) <= minority_class_len:
+            classes_to_retain_intact.append(i)
     logging.debug("Classes to undersample: {}".format(classes_to_undersample))
+    logging.debug("Classes to retain: {}".format(classes_to_retain_intact))
     indices_to_keep = []
     for i in classes_to_undersample:
-        indices_to_keep.append(np.random.choice(data[data['Demand']==i].index.tolist(),
+        indices_to_keep.append(np.random.choice(data[data==i].index,
             minority_class_len, replace = False))
-    minority_class_indices = data[data['Demand']>=class_to_match].index
-    under_sample_indices = np.concatenate([minority_class_indices,indices_to_keep[0],indices_to_keep[1]])
-    logging.debug("indices to keep: {}".format(under_sample_indices))
-    return data.loc[under_sample_indices]
+    for i in classes_to_retain_intact:
+        indices_to_keep.append(data[data==i].index)
+    indices_to_keep = np.concatenate(indices_to_keep)
+    logging.debug("indices to keep: {}".format(indices_to_keep))
+    return indices_to_keep
 
-def train_model(data, y_var, x_vars):
-    ''' (dataframe, str, [str]) -> model
-    Returns a fitted random forest model from an input dataframe'''
+def data_split(data,split):
+    '''(dataframe, float) -> (training dataframe, test dataframe)
+    Accepts as arguments a dataframe to be split into training and test components,
+    and a decimal that reflects what proportion of the data will be allocated
+    to the training dataframe. Both train and test dataframes are returned.'''
 
-    y = data[y_var]
-    x = data[x_vars]
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
-    # ### To compare how model predictions improve (or not) on the current relationship
-    # ### between supply and demand I include Total demand in the predictor variables
-    # ### so that it will be partitioned by train_test_split, but it isn't inteded
-    # ### as a model feature. I remove it from the x_train and x_test sets before
-    # ### model fitting, but return the Total attributed to test cases, so it can
-    # ### be passed to model validation as a predictor to compare against my model.
-    x_test_demand = x_test[x_vars[-1]]
-    x_train = x_train[x_vars[0:-1]]
-    x_test = x_test[x_vars[0:-1]]
+    msk = np.full(len(data),False)
+    test_ind = np.random.choice(np.arange(0,len(data)),int(len(data)*split),replace=False)
+    msk[test_ind] = True
+    train = data[msk]
+    test = data[~msk]
+    return train, test
+
+def cross_validate(x_train, y_train):
+    ''' (dataframe,dataframe)
+    Prints model scores for models fitted on different levels of undersampled data
+    after accepting predictor data (x_train) and response data (y_train)'''
+    print("Original length of data: {}".format(len(y_train)))
+    ### Compare score when matching class 0 (no undersampling), 1, or 2
+    for i in [0,1,2]:
+        ind_to_keep = np.sort(major_classes_undersampler(y_train,i))
+        print("Number of data points retained: {}".format(len(ind_to_keep)))
+        logging.debug(ind_to_keep)
+        y_train_red = y_train[ind_to_keep]
+        logging.debug(y_train)
+        x_train_red = x_train[x_train['ID'].isin(ind_to_keep)]
+        logging.debug(x_train)
+        x_train_red = x_train_red.drop('ID',axis=1)
+        logging.debug(x_train_red)
+        rf = RandomForestRegressor(n_estimators = 100, random_state = 42)
+        rf.fit(x_train_red, y_train_red)
+        print("Model R2, undersampled to {},: {}".format(i,rf.score(x_cv.drop('ID',axis=1),y_cv)))
+
+def train_model(x_train, y_train):
+    ''' (dataframe, dataframe) -> model
+    Returns a fitted random forest model from input training dataframes'''
+    x_train = x_train.drop('ID',axis=1)
     rf = RandomForestRegressor(n_estimators = 100, random_state = 42)
-    rf_model = rf.fit(x_train, y_train)
-    return rf_model, x_test, y_test, x_test_demand
+    rf.fit(x_train, y_train)
+    return rf
 
 def model_accuracy(rf_model, x_test, y_test):
     '''(model, array, array) -> None
     Takes in a fitted classification model and prints output reports directly
     to the terminal.
     '''
+    x_test = x_test.drop('ID',axis =1)
     y_pred = rf_model.predict(x_test)
     print("Model R2: {}".format(rf_model.score(x_test,y_test)))
     print("Model RMSE: {}".format(mean_squared_error(y_test, y_pred)))
@@ -68,12 +95,20 @@ def model_accuracy(rf_model, x_test, y_test):
     plt.plot([0, 90], [0,90], linewidth=2)
     plt.savefig('../test_regression_forest_scatterplot.png')
 
-def current_accuracy(x_test_demand, y_test):
-    print(len(x_test_demand))
-    print(len(y_test))
-    curr_r2 = 1 - ((y_test - x_test_demand) ** 2).sum()/((y_test - y_test.mean()) ** 2).sum()
-    print("R2 of current collection supply vs. demand: {}.".format(curr_r2))
-    print("Current NRMSE: {}".format(mean_squared_error(y_test, x_test_demand, squared = False)/np.mean(y_test)))
+def current_accuracy_test_data(x_test_demand, y_test):
+    '''([int],[int]) -> None
+    Accepts a list of supply for titles (x_test_demand) and a list of actual
+    demand for these titles (y_test), and returns measures of goodness of fit
+    for a linear model using demand ~ supply (assesses ability of supply to
+    predict demand for the books in the test set)'''
+    lm = linear_model.LinearRegression()
+    lm.fit(np.array(x_test_demand).reshape(-1,1),y_test)
+    print('R2 of linear model between supply and demand (test set): {}'.format(lm.score(np.array(x_test_demand).reshape(-1,1),y_test)))
+    print("nRMSE of linear model between supply and demand (test set): {}".format(mean_squared_error(x_test_demand, y_test, squared = False)/np.mean(y_test)))
+    sns.set()
+    sns.scatterplot(x_test_demand, y_test)
+    plt.plot([0, 90], [0,90], linewidth=2)
+    plt.savefig('../current_demand_supply.png')
 
 def model_test_cases(rf_model):
     '''(model, array, array) -> None
@@ -86,6 +121,22 @@ def model_test_cases(rf_model):
     print("Michael Pedruski, Late Night, Can, NFA, Eng:{}".format(rf_model.predict(np.array([0,
         0, 996559, 0, 4218963, 3222549]).reshape(1,-1))))
 
+def global_accuracy(rf_model):
+    '''Takes in raw data as well as the fitted model to show model predictions
+    for the entire catalogue'''
+    df = pd.read_csv(file_to_open)
+    ### Make predictions for all data points in catalogue
+    predictor_variables = ['Auteur_labels', 'Editeur_labels', 'Pays_labels',
+       'Years_offset', 'Document_type_labels', 'Language_type_labels']
+    x = df[predictor_variables]
+    y_true = df['Demand']
+    y_pred = rf_model.predict(x)
+    rounded = [round(i) for i in y_pred]
+    sns.set()
+    sns.scatterplot(rounded, y_true)
+    plt.plot([0, 200], [0,200], linewidth=2)
+    plt.savefig('../global_regression_forest_scatterplot.png')
+
 ### Classification of demand based on historical data
 if __name__ == "__main__":
 
@@ -95,26 +146,42 @@ if __name__ == "__main__":
     ### Determine paths to datasets and load into pandas dataframe
     processed_folder = Path("../data/processed")
     file_to_open = processed_folder / 'expanded_feature_labels_for_each_title.csv'
-    model_parameters = processed_folder / 'expanded_regression_tree_parameters.joblib'
+    model_parameters = processed_folder / 'expanded_regression_tree_parameters_post_cv.joblib'
 
     ### Loading response dataset
     df = pd.read_csv(file_to_open)
-    df = major_classes_undersampler(df,'Demand',2)
+    df.columns = ['ID','Auteur_labels', 'Editeur_labels', 'Pays_labels',
+               'Years_offset', 'Document_type_labels', 'Language_type_labels',
+               'Total','Demand']
+
+    ### Split model into train and test sets, then split train data into train and CV
     ### Training model (see note in train_model about use of 'Total')
-    predictor_variables = ['Auteur_labels', 'Editeur_labels', 'Pays_labels',
-           'Years_offset', 'Document_type_labels', 'Language_type_labels','Total']
-    logging.debug(predictor_variables)
-    rf_model, x_test, y_test, x_test_demand = train_model(df,'Demand',predictor_variables)
+    predictor_variables = ['ID','Auteur_labels', 'Editeur_labels', 'Pays_labels',
+           'Years_offset', 'Document_type_labels', 'Language_type_labels']
+    train_cv, test = data_split(df,0.7)
+    train, cv = data_split(train_cv,0.8)
+    x_train_cv, x_train, x_cv, x_test = train_cv[predictor_variables], train[predictor_variables], cv[predictor_variables], test[predictor_variables]
+    y_train_cv, y_train, y_cv, y_test = train_cv['Demand'], train['Demand'],cv['Demand'],test['Demand']
+
+    ### Cross validate for different levels of undersampling
+    cross_validate(x_train,y_train)
+    ### No undersampling gives highest CV score, so train model without undersampling
+    rf = train_model(x_train_cv,y_train_cv)
 
     ### Assess model accuracy
-    model_accuracy(rf_model,x_test, y_test)
-    current_accuracy(x_test_demand,y_test)
-    model_test_cases(rf_model)
+    model_accuracy(rf,x_test, y_test)
 
+    ### Assess accuracy of demand vs supply
+    x_test_demand = test['Total']
+    current_accuracy_test_data(x_test_demand,y_test)
+    model_test_cases(rf)
+    global_accuracy(rf)
+
+    sns.set()
     plt.figure()
-    plt.bar([0,1,2,3,4,5],rf_model.feature_importances_)
+    plt.bar([0,1,2,3,4,5],rf.feature_importances_)
     plt.savefig('../regression_tree_feature_importances.png')
 
     ### Save output of model
 
-    # dump(rf_model, model_parameters)
+    # dump(rf, model_parameters)
