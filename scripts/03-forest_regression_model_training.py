@@ -73,6 +73,7 @@ def train_model(x_train, y_train):
     ''' (dataframe, dataframe) -> model
     Returns a fitted random forest model from input training dataframes'''
     x_train = x_train.drop('ID',axis=1)
+    print(x_train.head(3))
     rf = RandomForestRegressor(n_estimators = 100, random_state = 42)
     rf.fit(x_train, y_train)
     return rf
@@ -164,7 +165,7 @@ if __name__ == "__main__":
     y_train_cv, y_train, y_cv, y_test = train_cv['Demand'], train['Demand'],cv['Demand'],test['Demand']
 
     ### Cross validate for different levels of undersampling
-    cross_validate(x_train,y_train)
+    # cross_validate(x_train,y_train)
     ### No undersampling gives highest CV score, so train model without undersampling
     rf = train_model(x_train_cv,y_train_cv)
 
@@ -177,8 +178,11 @@ if __name__ == "__main__":
     model_test_cases(rf)
     global_accuracy(rf)
 
+    print(rf.feature_importances_)
+
     sns.set()
     plt.figure()
+    # plt.bar([0,1,2,3,4,5],np.sort(rf.feature_importances_)[::-1])
     plt.bar([0,1,2,3,4,5],rf.feature_importances_)
     plt.savefig('../regression_tree_feature_importances.png')
 

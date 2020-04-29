@@ -67,9 +67,9 @@ if __name__ == "__main__":
     df = pd.read_csv(file_to_open,nrows=None)
 
     logging.critical('Imputing lifetime borrows to authors, publishers, and countries')
-    ### Return values for authors, publishers, and countries based on the lifetime number
-    ### of borrows for them and create lists of names for each author, publisher,
-    ### and country
+    ### Return values for authors, publishers, countries, type of book, and language,
+    ### based on the lifetime number
+    ### of borrows for them and create lists of names for these
     variables_to_label = ['Auteur','Editeur','Pays','Type-document','Langue']
     names_list = names_list(variables_to_label)
     titles_label_values = reestablish_labels(variables_to_label,names_list)

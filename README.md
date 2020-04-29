@@ -13,4 +13,4 @@
 
 ## For more information
 
-*Why not buy 2?* has been deployed at mpedruski.pythonanywhere.com
+*Why not buy 2?* is no longer deployed live, but if you have interest in seeing a live deployment let me know!
